@@ -152,7 +152,7 @@ class MainFrame extends JFrame {
                     if (newPasswordTyped && isTakenAccess)
                     {
                         newPasswordTyped = !newPasswordTyped;
-                        correctPassword =  new String(password.getPassword());//.getPassword().toString();
+                        correctPassword =  new String(password.getPassword());
 
                         passLabel.setText("password");
                         try {toChangePassword();} catch (IOException e1) {e1.printStackTrace();}
@@ -291,8 +291,15 @@ class MainFrame extends JFrame {
 
             String temp = sc.nextLine();
 
-            logo.setText("Licensed for "+temp.substring(10, temp.indexOf('.'))+" by Bulbum Lab, 2017");
-            this.correctLogin = temp.substring(10, temp.indexOf('.')).substring(0, temp.substring(10, temp.indexOf('.')).indexOf(' '));
+
+            if (temp.equals("Username: friend.")) {
+                logo.setText("Licensed for friend by Bulbum Lab, 2017");
+                correctLogin = "friend";
+            }
+                else{
+                    logo.setText("Licensed for"+temp.substring(temp.indexOf(' '), temp.indexOf('.'))+" by Bulbum Lab, 2017");
+                    correctLogin = temp.substring(10, temp.indexOf('.')).substring(0, temp.substring(10, temp.indexOf('.')).indexOf(' '));
+                    }
             repaint();
 
             return true;
@@ -310,7 +317,10 @@ class MainFrame extends JFrame {
                                username = license.arrayOfUsernames[i];
 
                                logo.setText("Licensed for "+username+" by Bulbum Lab, 2017");
-                               correctLogin = username.substring(0,username.indexOf(' '));
+
+                               if (username.equals("friend")) correctLogin = "friend";
+                               else  correctLogin = username.substring(0,username.indexOf(' '));
+
                                repaint();
 
 
@@ -324,8 +334,14 @@ class MainFrame extends JFrame {
                         if (license.licenseText.getText().equals(license.arrayOfLicenses[i])){
                             try {toPrintLicense(license.arrayOfUsernames[i]);
                                 username = license.arrayOfUsernames[i];
+
                                 logo.setText("Licensed for "+username+" by Bulbum Lab, 2017");
+
+                                if (username.equals("friend")) correctLogin = "friend";
+                                else  correctLogin = username.substring(0,username.indexOf(' '));
+
                                 repaint();
+
 
                             } catch (FileNotFoundException e1) {e1.printStackTrace();} catch (InterruptedException e1) {e1.printStackTrace();}
                         }
@@ -341,7 +357,7 @@ class MainFrame extends JFrame {
     }
     private void toPrintLicense(String user) throws FileNotFoundException, InterruptedException {
         PrintStream output = new PrintStream(new FileOutputStream("src//com//company//res//License.txt"));
-        output.print("Username: "+user+".\nLicensed by Bulbum Lab, Minsk. 2017. All rights reserved\nCopying, illegal distribution of program fragments, source code, resources, and encryption algorithm is prosecuted in accordance with the legislation of the Russian Federation under the Federal Law \"On Trade Secrets\" of July 29, 2004 N 98-FZ.\nPersonal license: "+license.licenseText.getText());
+        output.print("Username: "+user+".\nLicensed by Bulbum Lab, Minsk. 2017. All rights reserved.\nCopying, illegal distribution of program fragments, source code, resources, and encryption algorithm is prosecuted in accordance with the legislation of the Russian Federation under the Federal Law \"On Trade Secrets\" of July 29, 2004 N 98-FZ.\nPersonal license: "+license.licenseText.getText());
 
         license.toClose();
         this.setVisible(true);
@@ -384,8 +400,8 @@ class MainFrame extends JFrame {
 
         for (int i=0; i<text.length(); i++)
             switch (text.charAt(i)){
-                case ('a'): {substituted.append('z'); break;} //zyxwvutsrqponmlkjihgfedcba
-                case ('b'): {substituted.append('y'); break;} //
+                case ('a'): {substituted.append('z'); break;}
+                case ('b'): {substituted.append('y'); break;}
                 case ('c'): {substituted.append('x'); break;}
                 case ('d'): {substituted.append('w'); break;}
                 case ('e'): {substituted.append('v'); break;}
@@ -410,6 +426,56 @@ class MainFrame extends JFrame {
                 case ('x'): {substituted.append('c'); break;}
                 case ('y'): {substituted.append('b'); break;}
                 case ('z'): {substituted.append('a'); break;}
+
+                case ('A'): {substituted.append('Z'); break;}
+                case ('B'): {substituted.append('Y'); break;}
+                case ('C'): {substituted.append('X'); break;}
+                case ('D'): {substituted.append('W'); break;}
+                case ('E'): {substituted.append('V'); break;}
+                case ('F'): {substituted.append('U'); break;}
+                case ('G'): {substituted.append('T'); break;}
+                case ('H'): {substituted.append('S'); break;}
+                case ('I'): {substituted.append('R'); break;}
+                case ('J'): {substituted.append('Q'); break;}
+                case ('K'): {substituted.append('P'); break;}
+                case ('L'): {substituted.append('O'); break;}
+                case ('M'): {substituted.append('N'); break;}
+                case ('N'): {substituted.append('M'); break;}
+                case ('O'): {substituted.append('L'); break;}
+                case ('P'): {substituted.append('K'); break;}
+                case ('Q'): {substituted.append('J'); break;}
+                case ('R'): {substituted.append('I'); break;}
+                case ('S'): {substituted.append('H'); break;}
+                case ('T'): {substituted.append('G'); break;}
+                case ('U'): {substituted.append('F'); break;}
+                case ('V'): {substituted.append('E'); break;}
+                case ('W'): {substituted.append('D'); break;}
+                case ('X'): {substituted.append('C'); break;}
+                case ('Y'): {substituted.append('B'); break;}
+                case ('Z'): {substituted.append('A'); break;}
+
+                case ('0'): {substituted.append('!'); break;}
+                case ('1'): {substituted.append('\"'); break;}
+                case ('2'): {substituted.append('№'); break;}
+                case ('3'): {substituted.append(';'); break;}
+                case ('4'): {substituted.append('%'); break;}
+                case ('5'): {substituted.append(':'); break;}
+                case ('6'): {substituted.append('?'); break;}
+                case ('7'): {substituted.append('*'); break;}
+                case ('8'): {substituted.append('('); break;}
+                case ('9'): {substituted.append(')'); break;}
+
+                case ('!'): {substituted.append('0'); break;}
+                case ('\"'):{substituted.append('1'); break;}
+                case ('№'):{substituted.append('2'); break;}
+                case (';'): {substituted.append('3'); break;}
+                case ('%'): {substituted.append('4'); break;}
+                case (':'): {substituted.append('5'); break;}
+                case ('?'): {substituted.append('6'); break;}
+                case ('*'): {substituted.append('7'); break;}
+                case ('('): {substituted.append('8'); break;}
+                case (')'): {substituted.append('9'); break;}
+
 
                 default: {substituted.append('-'); break;}
             }

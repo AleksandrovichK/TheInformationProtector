@@ -8,10 +8,15 @@ import java.io.*;
 class License extends JFrame {
 
     JTextArea licenseText = new JTextArea();
-    String arrayOfLicenses[] ={"e5f6d5d1e73b288e62f5975db3e1f50e", "f57e35bb561a888513bd5926a10016dc", "b1f344ebc49f50d64644177083936340", "b30e7f87f49211d1112876caad4f211a"};
-    String arrayOfUsernames[] = {"Denis Zasypkin","Anastasia Navros","Andrew Komissarov", "Vladislav Nadysev"};
+    String arrayOfLicenses[] ={"e5f6d5d1e73b288e62f5975db3e1f50e", "f57e35bb561a888513bd5926a10016dc",
+                               "b1f344ebc49f50d64644177083936340", "b30e7f87f49211d1112876caad4f211a",
+                               "6945f936a87bbc10df83bb0e9e505c70",
+                               "10c60956ec9307ebe7b4108593363aa0", "e3c88e16015691abbdb74709c4d6b9dc",
+                               "9c2c965ea1051ef58bbabfc62d848eb1", "d4c2a1ec869e1774a2f4b81163e1a968"};
 
-    public boolean isValid=false;
+    String arrayOfUsernames[] = {"Denis Zasypkin","Anastasia Navros","Andrew Komissarov", "Vladislav Nadysev", "Kirill Aleksandrovich",
+                                 "friend","friend","friend","friend"};
+
     License() throws IOException {
         JLabel labelLicense = new JLabel("license");
 
