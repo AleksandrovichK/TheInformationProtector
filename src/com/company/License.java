@@ -8,8 +8,8 @@ import java.io.*;
 class License extends JFrame {
 
     JTextArea licenseText = new JTextArea();
-    String arrayOfLicenses[] ={"e5f6d5d1e73b288e62f5975db3e1f50e", "f57e35bb561a888513bd5926a10016dc", "b1f344ebc49f50d64644177083936340"};
-    String arrayOfUsernames[] = {"Denis Zasypkin","Anastasia Navros","Andrew Komissarov"};
+    String arrayOfLicenses[] ={"e5f6d5d1e73b288e62f5975db3e1f50e", "f57e35bb561a888513bd5926a10016dc", "b1f344ebc49f50d64644177083936340", "b30e7f87f49211d1112876caad4f211a"};
+    String arrayOfUsernames[] = {"Denis Zasypkin","Anastasia Navros","Andrew Komissarov", "Vladislav Nadysev"};
 
     public boolean isValid=false;
     License() throws IOException {
