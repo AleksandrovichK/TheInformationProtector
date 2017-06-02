@@ -11,6 +11,8 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.Scanner;
 
+//Сравнительно стабильная версия
+
 class MainFrame extends JFrame {
     private int width = 500;
     private int height = 300;
