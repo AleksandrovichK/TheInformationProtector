@@ -8,6 +8,8 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.*;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Scanner;
 
@@ -36,22 +38,26 @@ class MainFrame extends JFrame {
     private boolean isTakenAccess=false;
     private boolean newPasswordTyped=false;
 
-    MainFrame() throws IOException {
+    private ClassLoader cl = this.getClass().getClassLoader();
+
+
+    MainFrame() throws IOException, URISyntaxException {
 
          settings();
 
         if (toCheckLicense()) this.setVisible(true);
     }
 
-    private void settings() throws IOException {
+    private void settings() throws IOException, URISyntaxException {
         this.setVisible(false);
 
         toReadPassword();
 
+        if (null != cl.getResource("res/bg.jpg"))
+            this.setContentPane(new JLabel(new ImageIcon(cl.getResource("res/bg.jpg"))));
 
-        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setContentPane(new JLabel(new ImageIcon(ImageIO.read(new File("src//com//company//res//bg.jpg")))));
         this.setBounds(40 * Toolkit.getDefaultToolkit().getScreenSize().width / 100, 30 * Toolkit.getDefaultToolkit().getScreenSize().height / 100,  width, height);
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLayout(null);
 
 
@@ -74,10 +80,11 @@ class MainFrame extends JFrame {
         passLabel.setForeground(new Color(196, 202, 198));
         passLabel.setFont(new Font("Microsoft JhengHei Light", Font.BOLD, 12));
 
-
-        ImageIcon icon3 = new ImageIcon("src//com//company//res//encrypt.jpg");
-        encrypt = new JButton(icon3);
-        encrypt.addMouseListener(new MouseListener() {
+        if (null != cl.getResource("res/encrypt.jpg"))
+        {
+         ImageIcon icon3 = new ImageIcon(cl.getResource("res/encrypt.jpg"));
+         encrypt = new JButton(icon3);
+         encrypt.addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
 
@@ -96,10 +103,12 @@ class MainFrame extends JFrame {
                     encrypt.setOpaque(false);
                     encrypt.setBounds(encrypt.getX(), encrypt.getY() - 2, encrypt.getWidth(), encrypt.getHeight());
                 if (isTakenAccess){
-                    try {toOutputAndEncryptFile();} catch (IOException e1) {e1.printStackTrace();}
+                    try {toOutputAndEncryptFile();} catch (IOException e1) {e1.printStackTrace();} catch (URISyntaxException e1) {
+                        e1.printStackTrace();
+                    }
 
                     try{
-                        Process r = Runtime.getRuntime().exec("cmd /c  del src\\com\\company\\res\\decrypted.txt");
+                        Process r = Runtime.getRuntime().exec("cmd /c  del decrypted.txt");
                         }
                         catch(Exception e1){
                             System.out.println(e1.toString());
@@ -120,9 +129,12 @@ class MainFrame extends JFrame {
 
             }
         });
+        }
 
 
-        ImageIcon icon4 = new ImageIcon("src//com//company//res//sets.jpg");
+        if (null != cl.getResource("res/sets.jpg"))
+        {
+        ImageIcon icon4 = new ImageIcon(cl.getResource("res/sets.jpg"));
         setPassword = new JButton(icon4);
         setPassword.addMouseListener(new MouseListener() {
             @Override
@@ -157,7 +169,9 @@ class MainFrame extends JFrame {
                         correctPassword =  new String(password.getPassword());
 
                         passLabel.setText("password");
-                        try {toChangePassword();} catch (IOException e1) {e1.printStackTrace();}
+                        try {toChangePassword();} catch (IOException e1) {e1.printStackTrace();} catch (URISyntaxException e1) {
+                            e1.printStackTrace();
+                        }
                     }
                 }
             }
@@ -172,6 +186,7 @@ class MainFrame extends JFrame {
 
             }
         });
+        }
 
         logo.setForeground(new Color(196, 202, 198));
         logo.setFont(new Font("Microsoft JhengHei Light", Font.BOLD, 10));
@@ -229,9 +244,39 @@ class MainFrame extends JFrame {
       this.add(setPassword).setBounds(width-72,height-72,22,22);
     }
     private void toInputAndDecryptFile() throws IOException {
-        FileInputStream inputStream = new FileInputStream("src//com//company//res//crypted.txt");
-        PrintStream output = new PrintStream(new FileOutputStream("src//com//company//res//decrypted.txt"));
+        InputStream inputStream = Main.class.getResourceAsStream("/res/crypted.txt");
 
+        if (inputStream != null) //NO FILE WITH SECRETS
+        {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            StringBuilder buffer = new StringBuilder();
+
+            String line;
+            while ((line = reader.readLine()) != null)
+             {
+             buffer.append(line);
+             buffer.append("\n");
+             }
+
+                StringBuilder decryptedText = new StringBuilder();
+                for (int i = 0; i < buffer.length(); i++)
+                {
+                    if (buffer.charAt(i) == '\n') {decryptedText.append('\n'); continue;}
+                    decryptedText.append((char)((int) buffer.charAt(i) - 12));
+                }
+
+
+            PrintStream output = new PrintStream(new FileOutputStream("decrypted.txt"));
+            output.print(decryptedText);
+            inputStream.close();
+            output.close();
+
+            try{Process pr = Runtime.getRuntime().exec("cmd /c decrypted.txt");} catch(Exception e1){e1.printStackTrace();}
+        }
+        else {passLabel.setText("secret file is not found!"); repaint();}
+}
+    private void toOutputAndEncryptFile() throws IOException, URISyntaxException {
+        FileInputStream inputStream = new FileInputStream("decrypted.txt");
         Scanner sc = new Scanner(inputStream);
 
         StringBuilder buffer = new StringBuilder();
@@ -242,160 +287,183 @@ class MainFrame extends JFrame {
             buffer.append(temp);
             buffer.append("\n");
         }
+        inputStream.close();    //inputting ended
 
-        StringBuilder decryptedText = new StringBuilder();
-        for (int i = 0; i < buffer.length(); i++) {
-            if (buffer.charAt(i) == '\n') {decryptedText.append('\n'); continue;}
-            decryptedText.append((char)((int) buffer.charAt(i) - 2));
-        }
-        output.print(decryptedText);
-
-        inputStream.close();
-        output.close();
-
-            try{
-                Process pr = Runtime.getRuntime().exec("cmd /c src\\com\\company\\res\\decrypted.txt");
-            }
-            catch(Exception e1){
-                System.out.println(e1.toString());
-                e1.printStackTrace();
-            }
-
-    }
-    private void toOutputAndEncryptFile() throws IOException {
-        FileInputStream inputStream = new FileInputStream("src//com//company//res//decrypted.txt");
-        PrintStream output = new PrintStream(new FileOutputStream("src//com//company//res//crypted.txt"));
-
-        Scanner sc = new Scanner(inputStream);
-
-        StringBuilder buffer = new StringBuilder();
-
-        String temp;
-        while (sc.hasNextLine()){
-            temp = sc.nextLine();
-            buffer.append(temp);
-            buffer.append("\n");
-        }
 
         StringBuilder cryptedText = new StringBuilder();
         for (int i = 0; i < buffer.length(); i++) {
             if (buffer.charAt(i) == '\n') {cryptedText.append('\n'); continue;}
-            cryptedText.append((char)((int) buffer.charAt(i) + 2));
+            cryptedText.append((char)((int) buffer.charAt(i) + 13));
+        }  //handling ended
+
+
+        if (null != getClass().getResource("/res/crypted.txt")) {
+            URL resourceUrl = getClass().getResource("/res/crypted.txt");
+            File file = new File(resourceUrl.toURI());
+            PrintStream output = new PrintStream(file);
+
+            output.print(cryptedText);
+            output.close();
         }
-        output.print(cryptedText);
-        inputStream.close();
-        output.close();
+        else {logLabel.setText("crypted file is unable");passLabel.setText("crypted file is unable"); repaint();}
     }
     private boolean toCheckLicense() throws IOException {
-        if ((new File("src\\com\\company\\res\\License.txt")).exists()) {
-            FileInputStream in = new FileInputStream("src//com//company//res//License.txt");
-            Scanner sc = new Scanner(in);
+        InputStream inRes = Main.class.getResourceAsStream("/res/License.txt");
 
-            String temp = sc.nextLine();
+        if (inRes != null) //UNREGISTERED
+        {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inRes));
+            String line;
+
+            if ((line = reader.readLine()) == null) {
+                license = new License();
+                license.setAlwaysOnTop(true);
+
+                license.licenseText.getDocument().addDocumentListener(new DocumentListener() {
+                    @Override
+                    public void insertUpdate(DocumentEvent e) {
+                        for (int i = 0; i < license.arrayOfLicenses.length; i++)
+                            if (license.licenseText.getText().equals(license.arrayOfLicenses[i])) {
+                                try {
+                                    toPrintLicense(license.arrayOfUsernames[i]);
+                                    username = license.arrayOfUsernames[i];
+
+                                    logo.setText("Licensed for " + username + " by Bulbum Lab, 2017");
+
+                                    if (username.equals("friend")) correctLogin = "friend";
+                                    else correctLogin = username.substring(0, username.indexOf(' '));
+
+                                    repaint();
 
 
-            if (temp.equals("Username: friend.")) {
-                logo.setText("Licensed for friend by Bulbum Lab, 2017");
-                correctLogin = "friend";
-            }
-                else{
-                    logo.setText("Licensed for"+temp.substring(temp.indexOf(' '), temp.indexOf('.'))+" by Bulbum Lab, 2017");
-                    correctLogin = temp.substring(10, temp.indexOf('.')).substring(0, temp.substring(10, temp.indexOf('.')).indexOf(' '));
+                                } catch (FileNotFoundException e1) {
+                                    e1.printStackTrace();
+                                } catch (InterruptedException e1) {
+                                    e1.printStackTrace();
+                                } catch (URISyntaxException e1) {
+                                    e1.printStackTrace();
+                                }
+                            }
                     }
-            repaint();
 
-            return true;
-        }
-         else {
-             license = new License();
-             license.setAlwaysOnTop(true);
+                    @Override
+                    public void removeUpdate(DocumentEvent e) {
+                        for (int i = 0; i < license.arrayOfLicenses.length; i++)
+                            if (license.licenseText.getText().equals(license.arrayOfLicenses[i])) {
+                                try {
+                                    toPrintLicense(license.arrayOfUsernames[i]);
+                                    username = license.arrayOfUsernames[i];
 
-             license.licenseText.getDocument().addDocumentListener(new DocumentListener() {
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    for (int i=0; i<license.arrayOfLicenses.length; i++)
-                       if (license.licenseText.getText().equals(license.arrayOfLicenses[i])){
-                           try {toPrintLicense(license.arrayOfUsernames[i]);
-                               username = license.arrayOfUsernames[i];
+                                    logo.setText("Licensed for " + username + " by Bulbum Lab, 2017");
 
-                               logo.setText("Licensed for "+username+" by Bulbum Lab, 2017");
+                                    if (username.equals("friend")) correctLogin = "friend";
+                                    else correctLogin = username.substring(0, username.indexOf(' '));
 
-                               if (username.equals("friend")) correctLogin = "friend";
-                               else  correctLogin = username.substring(0,username.indexOf(' '));
-
-                               repaint();
+                                    repaint();
 
 
-                           } catch (FileNotFoundException e1) {e1.printStackTrace();} catch (InterruptedException e1) {e1.printStackTrace();}
-                       }
-                }
+                                } catch (FileNotFoundException e1) {
+                                    e1.printStackTrace();
+                                } catch (InterruptedException e1) {
+                                    e1.printStackTrace();
+                                } catch (URISyntaxException e1) {
+                                    e1.printStackTrace();
+                                }
+                            }
+                    }
 
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    for (int i=0; i<license.arrayOfLicenses.length; i++)
-                        if (license.licenseText.getText().equals(license.arrayOfLicenses[i])){
-                            try {toPrintLicense(license.arrayOfUsernames[i]);
-                                username = license.arrayOfUsernames[i];
+                    @Override
+                    public void changedUpdate(DocumentEvent e) {
 
-                                logo.setText("Licensed for "+username+" by Bulbum Lab, 2017");
-
-                                if (username.equals("friend")) correctLogin = "friend";
-                                else  correctLogin = username.substring(0,username.indexOf(' '));
-
-                                repaint();
-
-
-                            } catch (FileNotFoundException e1) {e1.printStackTrace();} catch (InterruptedException e1) {e1.printStackTrace();}
-                        }
-                }
-
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-
-                }
-            });
-             return false;
+                    }
+                });
+                return false;
+              }
+            else
+             {
+                if (line.equals("Username: friend."))
+                    {
+                        logo.setText("Licensed for friend by Bulbum Lab, 2017");
+                        correctLogin = "friend";
+                    }
+                    else
+                    {
+                        logo.setText("Licensed for" + line.substring(line.indexOf(' '), line.indexOf('.')) + " by Bulbum Lab, 2017");
+                        correctLogin = line.substring(10, line.indexOf('.')).substring(0, line.substring(10, line.indexOf('.')).indexOf(' ')); //It's name
+                    }
+                    return true;
              }
-    }
-    private void toPrintLicense(String user) throws FileNotFoundException, InterruptedException {
-        PrintStream output = new PrintStream(new FileOutputStream("src//com//company//res//License.txt"));
-        output.print("Username: "+user+".\nLicensed by Bulbum Lab, Minsk. 2017. All rights reserved.\nCopying, illegal distribution of program fragments, source code, resources, and encryption algorithm is prosecuted in accordance with the legislation of the Russian Federation under the Federal Law \"On Trade Secrets\" of July 29, 2004 N 98-FZ.\nPersonal license: "+license.licenseText.getText());
 
-        license.toClose();
+        }
+        repaint();
+
+        return false;
+    }
+    private void toPrintLicense(String user) throws FileNotFoundException, InterruptedException, URISyntaxException {
+
+        if (null != getClass().getResource("/res/License.txt")) {
+            URL resourceUrl = getClass().getResource("/res/License.txt");
+            File file = new File(resourceUrl.toURI());
+            PrintStream output = new PrintStream(file);
+
+            output.print("Username: " + user + ".\nLicensed by Bulbum Lab, Minsk. 2017. All rights reserved.\nCopying, illegal distribution of program fragments, source code, resources, and encryption algorithm is prosecuted in accordance with the legislation of the Russian Federation under the Federal Law \"On Trade Secrets\" of July 29, 2004 N 98-FZ.\nPersonal license: " + license.licenseText.getText());
+            output.close();
+            license.toClose();
+        }
+        else {logLabel.setText("invalid license");passLabel.setText("invalid license"); repaint();}
+
         this.setVisible(true);
     }
-    private void toChangePassword() throws IOException {
-        FileOutputStream fos = null;
-        ObjectOutputStream oos = null;
+    private void toChangePassword() throws IOException, URISyntaxException {
 
-        try
-        {
-            String toWrite = toSubstitute(correctPassword);
-            fos = new FileOutputStream("src//com//company//res//config.bin");
-            oos = new ObjectOutputStream(fos);
+        if (null != getClass().getResource("/res/config.bin")) {
+            URL resourceUrl = getClass().getResource("/res/config.bin");
+            File file = new File(resourceUrl.toURI());
+            FileOutputStream fos = new FileOutputStream(file);
+            ObjectOutputStream oos = null;
 
-            oos.writeObject(toWrite);
-            oos.flush();
-            oos.close();
+            try
+            {
+                String toWrite = toSubstitute(correctPassword);
+                oos = new ObjectOutputStream(fos);
+
+                oos.writeObject(toWrite);
+                oos.flush();
+                oos.close();
+            }
+            catch (FileNotFoundException e) {e.printStackTrace();}
         }
-        catch (FileNotFoundException e) {e.printStackTrace();}
+        else {
+            passLabel.setText("password configuration is invalid");
+            repaint();
+        }
     }
-    private void toReadPassword() throws IOException {
-        FileInputStream in = null;
+    private void toReadPassword() throws IOException, URISyntaxException {
+
+        InputStream inRes = Main.class.getResourceAsStream("/res/config.bin");
         ObjectInputStream ins = null;
 
-        try
+        if (inRes != null) //NOT PASSWORD
         {
-            in = new FileInputStream("src//com//company//res//config.bin");
-            ins = new ObjectInputStream(in);
-            correctPassword = (String) ins.readObject();
-            correctPassword = toSubstitute(correctPassword);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inRes));
+            String line;
 
-            in.close();
-            ins.close();
+            try
+            {
+                ins = new ObjectInputStream(inRes);
+                correctPassword = (String) ins.readObject();
+                correctPassword = toSubstitute(correctPassword);
+
+                inRes.close();
+                ins.close();
+            }
+                catch (FileNotFoundException e) {e.printStackTrace();}
+                catch (ClassNotFoundException e){e.printStackTrace();}
         }
-        catch (FileNotFoundException e) {e.printStackTrace();}
-        catch (ClassNotFoundException e){e.printStackTrace();}
+            else {
+                passLabel.setText("password configuration is invalid");
+                repaint();
+            }
     }
     private String toSubstitute(String text){
         StringBuilder substituted = new StringBuilder("");
