@@ -1,6 +1,5 @@
 package com.company;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -229,9 +228,12 @@ class MainFrame extends JFrame {
         this.setResizable(false);
     }
     private boolean isPasswordCorrect(char[] input){
+        if (null != correctPassword && null != input){
         if (input.length != correctPassword.length()) return false;
 
         return Arrays.equals(input, this.correctPassword.toCharArray());
+        }
+        else return false;
     }
     private void toTakeAccess() throws InterruptedException, IOException {
        login.setForeground(new Color(85, 255, 133));
@@ -240,8 +242,14 @@ class MainFrame extends JFrame {
        toInputAndDecryptFile();
        isTakenAccess = true;
 
+      if (null != encrypt && null != setPassword) {
       this.add(encrypt).setBounds(width-42,height-72,22,22);
       this.add(setPassword).setBounds(width-72,height-72,22,22);
+      }
+      else {
+          passLabel.setText("buttons are not able!");
+          repaint();
+          }
     }
     private void toInputAndDecryptFile() throws IOException {
         InputStream inputStream = Main.class.getResourceAsStream("/res/crypted.txt");
@@ -262,7 +270,7 @@ class MainFrame extends JFrame {
                 for (int i = 0; i < buffer.length(); i++)
                 {
                     if (buffer.charAt(i) == '\n') {decryptedText.append('\n'); continue;}
-                    decryptedText.append((char)((int) buffer.charAt(i) - 12));
+                    decryptedText.append((char)((int) buffer.charAt(i) - 13));
                 }
 
 
@@ -310,23 +318,25 @@ class MainFrame extends JFrame {
     private boolean toCheckLicense() throws IOException {
         InputStream inRes = Main.class.getResourceAsStream("/res/License.txt");
 
-        if (inRes != null) //UNREGISTERED
+        license = new License();
+        license.setAlwaysOnTop(true);
+
+        if (inRes != null) //ELSE UNREGISTERED
         {
             BufferedReader reader = new BufferedReader(new InputStreamReader(inRes));
             String line;
 
             if ((line = reader.readLine()) == null) {
-                license = new License();
-                license.setAlwaysOnTop(true);
-
                 license.licenseText.getDocument().addDocumentListener(new DocumentListener() {
                     @Override
                     public void insertUpdate(DocumentEvent e) {
-                        for (int i = 0; i < license.arrayOfLicenses.length; i++)
-                            if (license.licenseText.getText().equals(license.arrayOfLicenses[i])) {
+                        for (int i = 0; i < license.arrayOfLicenses.size(); i++)
+                            if (license.licenseText.getText().equals(license.arrayOfLicenses.get(i))) {
                                 try {
-                                    toPrintLicense(license.arrayOfUsernames[i]);
-                                    username = license.arrayOfUsernames[i];
+                                    toPrintLicense(license.arrayOfUsernames.get(i));
+                                    license.toClose();
+
+                                    username = license.arrayOfUsernames.get(i);
 
                                     logo.setText("Licensed for " + username + " by Bulbum Lab, 2017");
 
@@ -334,7 +344,6 @@ class MainFrame extends JFrame {
                                     else correctLogin = username.substring(0, username.indexOf(' '));
 
                                     repaint();
-
 
                                 } catch (FileNotFoundException e1) {
                                     e1.printStackTrace();
@@ -348,11 +357,13 @@ class MainFrame extends JFrame {
 
                     @Override
                     public void removeUpdate(DocumentEvent e) {
-                        for (int i = 0; i < license.arrayOfLicenses.length; i++)
-                            if (license.licenseText.getText().equals(license.arrayOfLicenses[i])) {
+                        for (int i = 0; i < license.arrayOfLicenses.size(); i++)
+                            if (license.licenseText.getText().equals(license.arrayOfLicenses.get(i))) {
                                 try {
-                                    toPrintLicense(license.arrayOfUsernames[i]);
-                                    username = license.arrayOfUsernames[i];
+                                    toPrintLicense(license.arrayOfUsernames.get(i));
+                                    license.toClose();
+
+                                    username = license.arrayOfUsernames.get(i);
 
                                     logo.setText("Licensed for " + username + " by Bulbum Lab, 2017");
 
@@ -381,6 +392,8 @@ class MainFrame extends JFrame {
               }
             else
              {
+                license.toClose();
+
                 if (line.equals("Username: friend."))
                     {
                         logo.setText("Licensed for friend by Bulbum Lab, 2017");
@@ -395,8 +408,11 @@ class MainFrame extends JFrame {
              }
 
         }
+        else {
+             license.labelLicense.setText("File with license is not existing!");
+             repaint();
+             }
         repaint();
-
         return false;
     }
     private void toPrintLicense(String user) throws FileNotFoundException, InterruptedException, URISyntaxException {
@@ -408,7 +424,6 @@ class MainFrame extends JFrame {
 
             output.print("Username: " + user + ".\nLicensed by Bulbum Lab, Minsk. 2017. All rights reserved.\nCopying, illegal distribution of program fragments, source code, resources, and encryption algorithm is prosecuted in accordance with the legislation of the Russian Federation under the Federal Law \"On Trade Secrets\" of July 29, 2004 N 98-FZ.\nPersonal license: " + license.licenseText.getText());
             output.close();
-            license.toClose();
         }
         else {logLabel.setText("invalid license");passLabel.setText("invalid license"); repaint();}
 
@@ -416,8 +431,8 @@ class MainFrame extends JFrame {
     }
     private void toChangePassword() throws IOException, URISyntaxException {
 
-        if (null != getClass().getResource("/res/config.bin")) {
-            URL resourceUrl = getClass().getResource("/res/config.bin");
+        if (null != getClass().getResource("/res/config.txt")) {
+            URL resourceUrl = getClass().getResource("/res/config.txt");
             File file = new File(resourceUrl.toURI());
             FileOutputStream fos = new FileOutputStream(file);
             ObjectOutputStream oos = null;
@@ -440,7 +455,7 @@ class MainFrame extends JFrame {
     }
     private void toReadPassword() throws IOException, URISyntaxException {
 
-        InputStream inRes = Main.class.getResourceAsStream("/res/config.bin");
+        InputStream inRes = Main.class.getResourceAsStream("/res/config.txt");
         ObjectInputStream ins = null;
 
         if (inRes != null) //NOT PASSWORD
@@ -462,10 +477,11 @@ class MainFrame extends JFrame {
         }
             else {
                 passLabel.setText("password configuration is invalid");
+                correctPassword = null;
                 repaint();
             }
     }
-    private String toSubstitute(String text){
+    static String toSubstitute(String text){
         StringBuilder substituted = new StringBuilder("");
 
         for (int i=0; i<text.length(); i++)
@@ -525,8 +541,8 @@ class MainFrame extends JFrame {
                 case ('Z'): {substituted.append('A'); break;}
 
                 case ('0'): {substituted.append('!'); break;}
-                case ('1'): {substituted.append('\"'); break;}
-                case ('2'): {substituted.append('№'); break;}
+                case ('1'): {substituted.append('"'); break;}
+                case ('2'): {substituted.append('+'); break;}
                 case ('3'): {substituted.append(';'); break;}
                 case ('4'): {substituted.append('%'); break;}
                 case ('5'): {substituted.append(':'); break;}
@@ -534,10 +550,11 @@ class MainFrame extends JFrame {
                 case ('7'): {substituted.append('*'); break;}
                 case ('8'): {substituted.append('('); break;}
                 case ('9'): {substituted.append(')'); break;}
+                case ('='): {substituted.append(' '); break;}
 
                 case ('!'): {substituted.append('0'); break;}
-                case ('\"'):{substituted.append('1'); break;}
-                case ('№'):{substituted.append('2'); break;}
+                case ('"'): {substituted.append('1'); break;}
+                case ('+'): {substituted.append('2'); break;}
                 case (';'): {substituted.append('3'); break;}
                 case ('%'): {substituted.append('4'); break;}
                 case (':'): {substituted.append('5'); break;}
@@ -545,6 +562,7 @@ class MainFrame extends JFrame {
                 case ('*'): {substituted.append('7'); break;}
                 case ('('): {substituted.append('8'); break;}
                 case (')'): {substituted.append('9'); break;}
+                case (' '): {substituted.append('='); break;}
 
 
                 default: {substituted.append('-'); break;}

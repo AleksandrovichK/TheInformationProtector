@@ -5,28 +5,18 @@ import java.awt.*;
 import java.io.*;
 import java.util.Vector;
 
-/*
-e5f6d5d1e73b288e62f5975db3e1f50e Denis Zasypkin
-f57e35bb561a888513bd5926a10016dc Anastasia Navros
-b1f344ebc49f50d64644177083936340 Andrew Komissarov
-b30e7f87f49211d1112876caad4f211a Vladislav Nadysev
-6945f936a87bbc10df83bb0e9e505c70 Kirill Aleksandrovich
-10c60956ec9307ebe7b4108593363aa0 friend
-e3c88e16015691abbdb74709c4d6b9dc friend
-9c2c965ea1051ef58bbabfc62d848eb1 friend
-d4c2a1ec869e1774a2f4b81163e1a968 friend
-*/
 
 class License extends JFrame {
 
     JTextArea licenseText = new JTextArea();
+    JLabel labelLicense = new JLabel("license");
     Vector<String> arrayOfLicenses = new Vector<>();
     Vector<String> arrayOfUsernames = new Vector<>();
 
     License() throws IOException {
         toFillLicenses();
 
-        JLabel labelLicense = new JLabel("license");
+
         ClassLoader cl = this.getClass().getClassLoader();
 
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -46,7 +36,7 @@ class License extends JFrame {
 
 
 
-        this.add(labelLicense).setBounds(130,120,50,20);
+        this.add(labelLicense).setBounds(130,120,220,20);
         this.add(licenseText).setBounds(30,100,280,20);
         this.setUndecorated(true);
 
@@ -58,23 +48,28 @@ class License extends JFrame {
         this.setVisible(false);
     }
     void toFillLicenses() throws IOException {
-        InputStream inputStream = Main.class.getResourceAsStream("/res/kernellic.bin");
+        InputStream inputStream = Main.class.getResourceAsStream("/res/kernellic.txt");
 
         if (inputStream != null) //NO FILE WITH SECRETS
         {
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-            StringBuilder buffer = new StringBuilder();
 
             String line;
             while ((line = reader.readLine()) != null)
             {
+                line = MainFrame.toSubstitute(line);
                 arrayOfLicenses.addElement(line.substring(0, line.indexOf(' ')));
+                arrayOfUsernames.addElement(line.substring(line.indexOf(' ')+1, line.length()));
 
-                buffer.append(line);
-                buffer.append("\n");
+                //d4c2a1ec869e1774a2f4b81163e1a968 friend
+
             }
 
             inputStream.close();
+        }
+        else {
+            labelLicense.setText("licenses registration is unable");
+            repaint();
         }
     }
 }
