@@ -36,24 +36,15 @@ class License extends JFrame {
         this.setVisible(true);
     }
 
-    void close(){
+    public void close(){
         this.setVisible(false);
     }
 
-
-    JTextArea getLicenseText() {
+    public JTextArea getLicenseText() {
         return licenseText;
     }
 
-    public void setLicenseText(JTextArea licenseText) {
-        this.licenseText = licenseText;
-    }
-
-    JLabel getLabelLicense() {
+    public JLabel getLabelLicense() {
         return labelLicense;
-    }
-
-    public void setLabelLicense(JLabel labelLicense) {
-        this.labelLicense = labelLicense;
     }
 }

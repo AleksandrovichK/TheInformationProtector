@@ -7,7 +7,7 @@ public class User {
     private String name;
     private String license;
 
-    User(String name, String license) {
+    public User(String name, String license) {
         this.name = name;
         this.license = license;
     }

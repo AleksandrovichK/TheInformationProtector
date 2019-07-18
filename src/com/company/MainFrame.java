@@ -1,68 +1,147 @@
 package com.company;
 
-import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
+import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Scanner;
+
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
+import com.company.io.Datastore;
+import com.company.io.Utils;
 
 // 2.0 Release version
 
-class MainFrame extends JFrame {
+public class MainFrame extends JFrame {
     private int width = 500;
     private int height = 300;
 
     private JTextArea login = new JTextArea();
     private JPasswordField password = new JPasswordField();
 
-    private String correctPassword;
-    private String correctLogin;
     private String username;
 
     private JLabel logLabel = new JLabel("login");
-    private JLabel passLabel= new JLabel("password");
+    private JLabel passLabel = new JLabel("password");
     private JLabel logo = new JLabel();
 
     private JButton encrypt;
     private JButton setPassword;
 
-    private boolean isTakenAccess=false;
-    private boolean newPasswordTyped=false;
+    private boolean isTakenAccess = false;
+    private boolean newPasswordTyped = false;
 
     private License licenseFrame = new License();
-    private List<User> usersData = new LinkedList<>();
+    private Datastore datastore = new Datastore();
 
     private ClassLoader cl = this.getClass().getClassLoader();
 
-
     MainFrame() throws IOException {
 
-         settings();
+        settings();
 
-        if (isLicenseValid()) {
-            this.setVisible(true);
+        switch (datastore.checkLicenseStatus()) {
+            case FILE_IS_ABSENT:{
+                licenseFrame.setAlwaysOnTop(true);
+                licenseFrame.getLabelLicense().setText("File with license is not existing!");
+                licenseFrame.repaint();
+                break;
+            }
+            case FILE_IS_EMPTY:{
+                licenseFrame.setAlwaysOnTop(true);
+                licenseFrame.getLicenseText().getDocument().addDocumentListener(new DocumentListener() {
+                    @Override
+                    public void insertUpdate(DocumentEvent e) {
+                        User foundUser = datastore.isLicensePresent(licenseFrame.getLicenseText().getText());
+                        if (foundUser != null) {
+                            licenseFrame.close();
+
+                            try {
+                                switch (datastore.printLicenseToFile(foundUser.getName(), foundUser.getLicense())){
+                                    case FILE_IS_ABSENT: {
+                                        logLabel.setText("invalid license file");
+                                        passLabel.setText("invalid license file");
+                                        repaint();
+                                        break;
+                                    }
+                                    case SUCCESS:{
+                                        setVisible(true);
+                                        break;
+                                    }
+                                }
+                                username = foundUser.getName();
+                                logo.setText("Licensed for " + username + " by Aleksandrovich K., 2017-2020");
+                                if (username.equals("friend")) {
+                                    datastore.setCorrectLogin("friend");
+                                } else {
+                                    datastore.setCorrectLogin(username.substring(0, username.indexOf(' ')));
+                                }
+                                repaint();
+                                // TODO Exception catching
+                            } catch (FileNotFoundException | URISyntaxException e1) {
+                                e1.printStackTrace();
+                            }
+                        }
+
+                    }
+
+                    @Override
+                    public void removeUpdate(DocumentEvent e) {
+                       this.insertUpdate(e);
+                    }
+
+                    @Override
+                    public void changedUpdate(DocumentEvent e) {
+
+                    }
+                });
+                licenseFrame.setVisible(true);
+                licenseFrame.repaint();
+                break;
+            }
+            case SUCCESS:{
+                logo.setText("Licensed for" + datastore.getCorrectLogin() + " by Aleksandrovich K., 2017-2020");
+                licenseFrame.close();
+                this.repaint();
+                break;
+            }
         }
     }
 
-    private void settings() throws IOException {
+    private void settings() {
         this.setVisible(false);
 
-        toReadPassword();
-        toFillLicenses();
+        switch (this.datastore.toReadPassword()){
+
+        }
+            passLabel.setText("password configuration is invalid");
+
+        // may be repaint should be here too
+
+        if (!this.datastore.toFillLicenses()) {
+            this.licenseFrame.getLabelLicense().setText("licenses registration is unable");
+        }
+        this.repaint();
 
         if (null != cl.getResource("res/bg.jpg")) {
             this.setContentPane(new JLabel(new ImageIcon(cl.getResource("res/bg.jpg"))));
         }
 
-        this.setBounds(40 * Toolkit.getDefaultToolkit().getScreenSize().width / 100, 30 * Toolkit.getDefaultToolkit().getScreenSize().height / 100,  width, height);
+        this.setBounds(40 * Toolkit.getDefaultToolkit().getScreenSize().width / 100, 30 * Toolkit.getDefaultToolkit().getScreenSize().height / 100, width, height);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLayout(null);
 
@@ -83,112 +162,113 @@ class MainFrame extends JFrame {
         passLabel.setForeground(new Color(196, 202, 198));
         passLabel.setFont(new Font("Microsoft JhengHei Light", Font.BOLD, 12));
 
-        if (null != cl.getResource("res/encrypt.jpg"))
-        {
-         ImageIcon icon3 = new ImageIcon(cl.getResource("res/encrypt.jpg"));
-         encrypt = new JButton(icon3);
-         encrypt.addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
+        if (null != cl.getResource("res/encrypt.jpg")) {
+            ImageIcon icon3 = new ImageIcon(cl.getResource("res/encrypt.jpg"));
+            encrypt = new JButton(icon3);
+            encrypt.addMouseListener(new MouseListener() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
 
-            }
-            @Override
-            public void mousePressed(MouseEvent e) {
-                if (!encrypt.isOpaque()) {
-                    encrypt.setOpaque(true);
-                    encrypt.setBounds(encrypt.getX(), encrypt.getY() + 2, encrypt.getWidth(), encrypt.getHeight());
                 }
-            }
 
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                if (encrypt.isOpaque()) {
-                    encrypt.setOpaque(false);
-                    encrypt.setBounds(encrypt.getX(), encrypt.getY() - 2, encrypt.getWidth(), encrypt.getHeight());
-                if (isTakenAccess){
-                    try {
-                        toOutputAndEncryptFile();
-                    } catch (IOException | URISyntaxException e1) {e1.printStackTrace();}
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    if (!encrypt.isOpaque()) {
+                        encrypt.setOpaque(true);
+                        encrypt.setBounds(encrypt.getX(), encrypt.getY() + 2, encrypt.getWidth(), encrypt.getHeight());
+                    }
+                }
 
-                    try{
-                        Runtime.getRuntime().exec("cmd /c  del decrypted.txt");
+                @Override
+                public void mouseReleased(MouseEvent e) {
+                    if (encrypt.isOpaque()) {
+                        encrypt.setOpaque(false);
+                        encrypt.setBounds(encrypt.getX(), encrypt.getY() - 2, encrypt.getWidth(), encrypt.getHeight());
+                        if (isTakenAccess) {
+                            try {
+                                toOutputAndEncryptFile();
+                            } catch (IOException | URISyntaxException e1) {
+                                e1.printStackTrace();
+                            }
+
+                            try {
+                                Runtime.getRuntime().exec("cmd /c  del decrypted.txt");
+                            } catch (Exception e1) {
+                                System.out.println(e1.toString());
+                                e1.printStackTrace();
+                            }
                         }
-                        catch(Exception e1){
-                            System.out.println(e1.toString());
-                            e1.printStackTrace();
-                        }
+                        System.exit(0);
+                    }
                 }
-                    System.exit(0);
+
+                @Override
+                public void mouseEntered(MouseEvent e) {
+
                 }
-            }
 
-            @Override
-            public void mouseEntered(MouseEvent e) {
+                @Override
+                public void mouseExited(MouseEvent e) {
 
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-
-            }
-        });
+                }
+            });
         }
 
+        if (null != cl.getResource("res/sets.jpg")) {
+            ImageIcon icon4 = new ImageIcon(cl.getResource("res/sets.jpg"));
+            setPassword = new JButton(icon4);
+            setPassword.addMouseListener(new MouseListener() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
 
-        if (null != cl.getResource("res/sets.jpg"))
-        {
-        ImageIcon icon4 = new ImageIcon(cl.getResource("res/sets.jpg"));
-        setPassword = new JButton(icon4);
-        setPassword.addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-
-            }
-            @Override
-            public void mousePressed(MouseEvent e) {
-                if (!setPassword.isOpaque()) {
-                    setPassword.setOpaque(true);
-                    setPassword.setBounds(setPassword.getX(), setPassword.getY() + 2, setPassword.getWidth(), setPassword.getHeight());
                 }
-            }
 
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                if (setPassword.isOpaque()) {
-                    setPassword.setOpaque(false);
-                    setPassword.setBounds(setPassword.getX(), setPassword.getY() - 2, setPassword.getWidth(), setPassword.getHeight());
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    if (!setPassword.isOpaque()) {
+                        setPassword.setOpaque(true);
+                        setPassword.setBounds(setPassword.getX(), setPassword.getY() + 2, setPassword.getWidth(), setPassword.getHeight());
+                    }
+                }
 
-                    if (!newPasswordTyped && isTakenAccess) {
+                @Override
+                public void mouseReleased(MouseEvent e) {
+                    if (setPassword.isOpaque()) {
+                        setPassword.setOpaque(false);
+                        setPassword.setBounds(setPassword.getX(), setPassword.getY() - 2, setPassword.getWidth(), setPassword.getHeight());
+
+                        if (!newPasswordTyped && isTakenAccess) {
                             passLabel.setText("input new password");
                             password.setText("");
                             newPasswordTyped = !newPasswordTyped;
                             repaint();
                             return;
-                    }
+                        }
 
-                    if (newPasswordTyped && isTakenAccess)
-                    {
-                        newPasswordTyped = !newPasswordTyped;
-                        correctPassword =  new String(password.getPassword());
+                        if (newPasswordTyped && isTakenAccess) {
+                            newPasswordTyped = !newPasswordTyped;
 
-                        passLabel.setText("password");
-                        try {toChangePassword();} catch (IOException e1) {e1.printStackTrace();} catch (URISyntaxException e1) {
-                            e1.printStackTrace();
+                            datastore.setCorrectPassword(new String(password.getPassword()));
+                            passLabel.setText("password");
+                            try {
+                                toChangePassword();
+                            } catch (IOException | URISyntaxException e1) {
+                                e1.printStackTrace();
+                            }
                         }
                     }
                 }
-            }
 
-            @Override
-            public void mouseEntered(MouseEvent e) {
+                @Override
+                public void mouseEntered(MouseEvent e) {
 
-            }
+                }
 
-            @Override
-            public void mouseExited(MouseEvent e) {
+                @Override
+                public void mouseExited(MouseEvent e) {
 
-            }
-        });
+                }
+            });
         }
 
         logo.setForeground(new Color(196, 202, 198));
@@ -197,7 +277,7 @@ class MainFrame extends JFrame {
         DocumentListener listener = new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                if (login.getText().equals(correctLogin) && isPasswordCorrect(password.getPassword())) {
+                if (login.getText().equals(datastore.getCorrectLogin()) && datastore.isPasswordCorrect(password.getPassword())) {
                     try {
                         grantAccess();
                     } catch (IOException e1) {
@@ -208,7 +288,7 @@ class MainFrame extends JFrame {
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                if (login.getText().equals(correctLogin) && isPasswordCorrect(password.getPassword())) {
+                if (login.getText().equals(datastore.getCorrectLogin()) && datastore.isPasswordCorrect(password.getPassword())) {
                     try {
                         grantAccess();
                     } catch (IOException e1) {
@@ -219,7 +299,7 @@ class MainFrame extends JFrame {
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                if (login.getText().equals(correctLogin) && isPasswordCorrect(password.getPassword())) {
+                if (login.getText().equals(datastore.getCorrectLogin()) && datastore.isPasswordCorrect(password.getPassword())) {
                     try {
                         grantAccess();
                     } catch (IOException e1) {
@@ -232,36 +312,31 @@ class MainFrame extends JFrame {
         password.getDocument().addDocumentListener(listener);
         login.getDocument().addDocumentListener(listener);
 
-        this.add(login).setBounds(40,100,400,20);
-        this.add(password).setBounds(40,160,400,20);
-        this.add(logLabel).setBounds(40,120,400,20);
-        this.add(passLabel).setBounds(40,180,400,20);
-        this.add(logo).setBounds(180,250,340,20);
+        this.add(login).setBounds(40, 100, 400, 20);
+        this.add(password).setBounds(40, 160, 400, 20);
+        this.add(logLabel).setBounds(40, 120, 400, 20);
+        this.add(passLabel).setBounds(40, 180, 400, 20);
+        this.add(logo).setBounds(180, 250, 340, 20);
 
         this.setResizable(false);
     }
-    private boolean isPasswordCorrect(char[] input){
-        if (null != correctPassword && null != input){
-            return Arrays.equals(input, this.correctPassword.toCharArray());
-        }
-        else return false;
-    }
+
     private void grantAccess() throws IOException {
-       login.setForeground(new Color(85, 255, 133));
-       password.setForeground(new Color(85, 255, 133));
+        login.setForeground(new Color(85, 255, 133));
+        password.setForeground(new Color(85, 255, 133));
 
-       toInputAndDecryptFile();
-       isTakenAccess = true;
+        toInputAndDecryptFile();
+        isTakenAccess = true;
 
-      if (null != encrypt && null != setPassword) {
-      this.add(encrypt).setBounds(width-42,height-72,22,22);
-      this.add(setPassword).setBounds(width-72,height-72,22,22);
-      }
-      else {
-          passLabel.setText("buttons are not able!");
-          repaint();
-          }
+        if (null != encrypt && null != setPassword) {
+            this.add(encrypt).setBounds(width - 42, height - 72, 22, 22);
+            this.add(setPassword).setBounds(width - 72, height - 72, 22, 22);
+        } else {
+            passLabel.setText("buttons are not able!");
+            repaint();
+        }
     }
+
     private void toInputAndDecryptFile() throws IOException {
         InputStream inputStream = Main.class.getResourceAsStream("/res/crypted.txt");
 
@@ -271,29 +346,36 @@ class MainFrame extends JFrame {
             StringBuilder buffer = new StringBuilder();
 
             String line;
-            while ((line = reader.readLine()) != null)
-             {
-             buffer.append(line);
-             buffer.append("\n");
-             }
+            while ((line = reader.readLine()) != null) {
+                buffer.append(line);
+                buffer.append("\n");
+            }
 
-                StringBuilder decryptedText = new StringBuilder();
-                for (int i = 0; i < buffer.length(); i++)
-                {
-                    if (buffer.charAt(i) == '\n') {decryptedText.append('\n'); continue;}
-                    decryptedText.append((char)((int) buffer.charAt(i) - 13));
+            StringBuilder decryptedText = new StringBuilder();
+            for (int i = 0; i < buffer.length(); i++) {
+                if (buffer.charAt(i) == '\n') {
+                    decryptedText.append('\n');
+                    continue;
                 }
-
+                decryptedText.append((char) ((int) buffer.charAt(i) - 13));
+            }
 
             PrintStream output = new PrintStream(new FileOutputStream("decrypted.txt"));
             output.print(decryptedText);
             inputStream.close();
             output.close();
 
-            try{Process pr = Runtime.getRuntime().exec("cmd /c decrypted.txt");} catch(Exception e1){e1.printStackTrace();}
+            try {
+                Process pr = Runtime.getRuntime().exec("cmd /c decrypted.txt");
+            } catch (Exception e1) {
+                e1.printStackTrace();
+            }
+        } else {
+            passLabel.setText("secret file is not found!");
+            repaint();
         }
-        else {passLabel.setText("secret file is not found!"); repaint();}
-}
+    }
+
     private void toOutputAndEncryptFile() throws IOException, URISyntaxException {
         FileInputStream inputStream = new FileInputStream("decrypted.txt");
         Scanner sc = new Scanner(inputStream);
@@ -301,20 +383,21 @@ class MainFrame extends JFrame {
         StringBuilder buffer = new StringBuilder();
 
         String temp;
-        while (sc.hasNextLine()){
+        while (sc.hasNextLine()) {
             temp = sc.nextLine();
             buffer.append(temp);
             buffer.append("\n");
         }
         inputStream.close();    //inputting ended
 
-
         StringBuilder cryptedText = new StringBuilder();
         for (int i = 0; i < buffer.length(); i++) {
-            if (buffer.charAt(i) == '\n') {cryptedText.append('\n'); continue;}
-            cryptedText.append((char)((int) buffer.charAt(i) + 13));
+            if (buffer.charAt(i) == '\n') {
+                cryptedText.append('\n');
+                continue;
+            }
+            cryptedText.append((char) ((int) buffer.charAt(i) + 13));
         }  //handling ended
-
 
         if (null != getClass().getResource("/res/crypted.txt")) {
             URL resourceUrl = getClass().getResource("/res/crypted.txt");
@@ -323,284 +406,33 @@ class MainFrame extends JFrame {
 
             output.print(cryptedText);
             output.close();
-        }
-        else {logLabel.setText("crypted file is unable");passLabel.setText("crypted file is unable"); repaint();}
-    }
-    private boolean isLicenseValid() throws IOException {
-        InputStream inRes = Main.class.getResourceAsStream("/res/License.txt");
-
-        if (inRes != null) //ELSE UNREGISTERED
-        {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inRes));
-            String writtenLicense = reader.readLine();
-
-            if (writtenLicense == null) {
-                licenseFrame.setAlwaysOnTop(true);
-                licenseFrame.getLicenseText().getDocument().addDocumentListener(new DocumentListener() {
-                    @Override
-                    public void insertUpdate(DocumentEvent e) {
-                        User foundUser = isLicensePresent(licenseFrame.getLicenseText().getText());
-                        if (foundUser != null){
-                            licenseFrame.close();
-
-                            try {
-                                toPrintLicense(foundUser.getName(), foundUser.getLicense());
-                                username = foundUser.getName();
-                                logo.setText("Licensed for " + username + " by Aleksandrovich K., 2017");
-                                if (username.equals("friend")) correctLogin = "friend";
-                                else correctLogin = username.substring(0, username.indexOf(' '));
-
-                                repaint();
-
-                                // TODO Exception catching
-                            } catch (FileNotFoundException | URISyntaxException e1) {
-                                e1.printStackTrace();
-                            }
-                        }
-
-                    }
-
-                    @Override
-                    public void removeUpdate(DocumentEvent e) {
-                        User foundUser = isLicensePresent(licenseFrame.getLicenseText().getText());
-                        if (foundUser != null){
-                            licenseFrame.close();
-
-                            try {
-                                toPrintLicense(foundUser.getName(), foundUser.getLicense());
-                                username = foundUser.getName();
-                                logo.setText("Licensed for " + username + " by Aleksandrovich K., 2017");
-                                if (username.equals("friend")) correctLogin = "friend";
-                                else correctLogin = username.substring(0, username.indexOf(' '));
-
-                                repaint();
-
-                            } catch (FileNotFoundException | URISyntaxException e1) {
-                                e1.printStackTrace();
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void changedUpdate(DocumentEvent e) {
-
-                    }
-                });
-                return false;
-              }
-            else
-             {
-                licenseFrame.close();
-
-                if (writtenLicense.equals("Username: friend."))
-                    {
-                        logo.setText("Licensed for friend by Aleksandrovich K., 2017-2020");
-                        correctLogin = "friend";
-                    }
-                    else
-                    {
-                        logo.setText("Licensed for" + writtenLicense.substring(writtenLicense.indexOf(' '), writtenLicense.indexOf('.')) + " by Bulbum Lab, 2017");
-                        correctLogin = writtenLicense.substring(10, writtenLicense.indexOf('.')).substring(0, writtenLicense.substring(10, writtenLicense.indexOf('.')).indexOf(' ')); //It's name
-                    }
-                    return true;
-             }
-
-        }
-        else {
-             licenseFrame.setAlwaysOnTop(true);
-             licenseFrame.getLabelLicense().setText("File with licenseFrame is not existing!");
-             repaint();
-             }
-        repaint();
-        return false;
-    }
-
-    private void toFillLicenses() throws IOException {
-        InputStream inputStream = Main.class.getResourceAsStream("/res/kernellic.txt");
-
-        if (inputStream != null) //NO FILE WITH SECRETS
-        {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-
-            String line;
-            while ((line = reader.readLine()) != null)
-            {
-                line = MainFrame.toSubstitute(line);
-
-                String name = line.substring(line.indexOf(' ')+1);
-                String license = line.substring(0, line.indexOf(' '));
-                String[] creds = line.split(" "); // TODO is it better?
-                this.usersData.add(new User(name, license));
-                //d4c2a1ec869e1774a2f4b81163e1a968 friend
-            }
-
-            inputStream.close();
-        }
-        else {
-            this.licenseFrame.getLabelLicense().setText("licenses registration is unable");
+        } else {
+            logLabel.setText("crypted file is unable");
+            passLabel.setText("crypted file is unable");
             repaint();
         }
     }
-    /**
-     * @param inputtedLicense license inputted on UI
-     * @return username of user with given license
-     */
-    private User isLicensePresent(String inputtedLicense) {
-        for (User user: usersData) {
-            if (inputtedLicense.equals(user.getLicense())) {
-                return user;
-            }
-        }
-        return null;
-    }
 
-    private void toPrintLicense(String user, String license) throws FileNotFoundException, URISyntaxException {
-
-        if (null != getClass().getResource("/res/License.txt")) {
-            URL resourceUrl = getClass().getResource("/res/License.txt");
-            File file = new File(resourceUrl.toURI());
-            PrintStream output = new PrintStream(file);
-
-            output.print("Username: " + user + ".\nLicensed by Aleksandrovich K., Minsk. 2017-2020. All rights reserved.\nCopying, illegal distribution of program fragments, source code, resources, and encryption algorithm is prosecuted in accordance with the legislation of the Russian Federation under the Federal Law \"On Trade Secrets\" of July 29, 2004 N 98-FZ.\nPersonal license: " + license);
-            output.close();
-        }
-        else {logLabel.setText("invalid license");passLabel.setText("invalid license"); repaint();}
-
-        this.setVisible(true);
-    }
     private void toChangePassword() throws IOException, URISyntaxException {
-
         if (null != getClass().getResource("/res/config.txt")) {
             URL resourceUrl = getClass().getResource("/res/config.txt");
             File file = new File(resourceUrl.toURI());
             FileOutputStream fos = new FileOutputStream(file);
             ObjectOutputStream oos = null;
 
-            try
-            {
-                String toWrite = toSubstitute(correctPassword);
+            try {
+                String toWrite = Utils.toSubstitute(datastore.getCorrectPassword());
                 oos = new ObjectOutputStream(fos);
 
                 oos.writeObject(toWrite);
                 oos.flush();
                 oos.close();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
             }
-            catch (FileNotFoundException e) {e.printStackTrace();}
-        }
-        else {
+        } else {
             passLabel.setText("password configuration is invalid");
             repaint();
         }
-    }
-    private void toReadPassword() throws IOException {
-
-        InputStream inRes = getClass().getResourceAsStream("/res/config.txt");
-        if (inRes != null) //NOT PASSWORD
-        {
-            try
-            {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(inRes));
-                String pass = reader.readLine();
-                this.correctPassword = toSubstitute(pass); //(String) ins.readObject();
-
-                inRes.close();
-                //ins.close();
-            }
-                catch (FileNotFoundException e) {e.printStackTrace();}
-                //catch (ClassNotFoundException e){e.printStackTrace();}
-        }
-            else {
-                passLabel.setText("password configuration is invalid");
-                correctPassword = null;
-                repaint();
-            }
-    }
-    private static String toSubstitute(String text){
-        StringBuilder substituted = new StringBuilder();
-
-        for (int i=0; i<text.length(); i++)
-            switch (text.charAt(i)){
-                case ('a'): {substituted.append('z'); break;}
-                case ('b'): {substituted.append('y'); break;}
-                case ('c'): {substituted.append('x'); break;}
-                case ('d'): {substituted.append('w'); break;}
-                case ('e'): {substituted.append('v'); break;}
-                case ('f'): {substituted.append('u'); break;}
-                case ('g'): {substituted.append('t'); break;}
-                case ('h'): {substituted.append('s'); break;}
-                case ('i'): {substituted.append('r'); break;}
-                case ('j'): {substituted.append('q'); break;}
-                case ('k'): {substituted.append('p'); break;}
-                case ('l'): {substituted.append('o'); break;}
-                case ('m'): {substituted.append('n'); break;}
-                case ('n'): {substituted.append('m'); break;}
-                case ('o'): {substituted.append('l'); break;}
-                case ('p'): {substituted.append('k'); break;}
-                case ('q'): {substituted.append('j'); break;}
-                case ('r'): {substituted.append('i'); break;}
-                case ('s'): {substituted.append('h'); break;}
-                case ('t'): {substituted.append('g'); break;}
-                case ('u'): {substituted.append('f'); break;}
-                case ('v'): {substituted.append('e'); break;}
-                case ('w'): {substituted.append('d'); break;}
-                case ('x'): {substituted.append('c'); break;}
-                case ('y'): {substituted.append('b'); break;}
-                case ('z'): {substituted.append('a'); break;}
-
-                case ('A'): {substituted.append('Z'); break;}
-                case ('B'): {substituted.append('Y'); break;}
-                case ('C'): {substituted.append('X'); break;}
-                case ('D'): {substituted.append('W'); break;}
-                case ('E'): {substituted.append('V'); break;}
-                case ('F'): {substituted.append('U'); break;}
-                case ('G'): {substituted.append('T'); break;}
-                case ('H'): {substituted.append('S'); break;}
-                case ('I'): {substituted.append('R'); break;}
-                case ('J'): {substituted.append('Q'); break;}
-                case ('K'): {substituted.append('P'); break;}
-                case ('L'): {substituted.append('O'); break;}
-                case ('M'): {substituted.append('N'); break;}
-                case ('N'): {substituted.append('M'); break;}
-                case ('O'): {substituted.append('L'); break;}
-                case ('P'): {substituted.append('K'); break;}
-                case ('Q'): {substituted.append('J'); break;}
-                case ('R'): {substituted.append('I'); break;}
-                case ('S'): {substituted.append('H'); break;}
-                case ('T'): {substituted.append('G'); break;}
-                case ('U'): {substituted.append('F'); break;}
-                case ('V'): {substituted.append('E'); break;}
-                case ('W'): {substituted.append('D'); break;}
-                case ('X'): {substituted.append('C'); break;}
-                case ('Y'): {substituted.append('B'); break;}
-                case ('Z'): {substituted.append('A'); break;}
-
-                case ('0'): {substituted.append('!'); break;}
-                case ('1'): {substituted.append('"'); break;}
-                case ('2'): {substituted.append('+'); break;}
-                case ('3'): {substituted.append(';'); break;}
-                case ('4'): {substituted.append('%'); break;}
-                case ('5'): {substituted.append(':'); break;}
-                case ('6'): {substituted.append('?'); break;}
-                case ('7'): {substituted.append('*'); break;}
-                case ('8'): {substituted.append('('); break;}
-                case ('9'): {substituted.append(')'); break;}
-                case ('='): {substituted.append(' '); break;}
-
-                case ('!'): {substituted.append('0'); break;}
-                case ('"'): {substituted.append('1'); break;}
-                case ('+'): {substituted.append('2'); break;}
-                case (';'): {substituted.append('3'); break;}
-                case ('%'): {substituted.append('4'); break;}
-                case (':'): {substituted.append('5'); break;}
-                case ('?'): {substituted.append('6'); break;}
-                case ('*'): {substituted.append('7'); break;}
-                case ('('): {substituted.append('8'); break;}
-                case (')'): {substituted.append('9'); break;}
-                case (' '): {substituted.append('='); break;}
-
-
-                default: {substituted.append('-'); break;}
-            }
-            return substituted.toString();
     }
 }
