@@ -10,9 +10,11 @@ import java.io.*;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Scanner;
 
-//Сравнительно стабильная версия
+// 2.0 Release version
 
 class MainFrame extends JFrame {
     private int width = 500;
@@ -29,46 +31,48 @@ class MainFrame extends JFrame {
     private JLabel passLabel= new JLabel("password");
     private JLabel logo = new JLabel();
 
-    private License license;
-
     private JButton encrypt;
     private JButton setPassword;
 
     private boolean isTakenAccess=false;
     private boolean newPasswordTyped=false;
 
+    private License licenseFrame = new License();
+    private List<User> usersData = new LinkedList<>();
+
     private ClassLoader cl = this.getClass().getClassLoader();
 
 
-    MainFrame() throws IOException, URISyntaxException {
+    MainFrame() throws IOException {
 
          settings();
 
-        if (toCheckLicense()) this.setVisible(true);
+        if (isLicenseValid()) {
+            this.setVisible(true);
+        }
     }
 
-    private void settings() throws IOException, URISyntaxException {
+    private void settings() throws IOException {
         this.setVisible(false);
 
         toReadPassword();
+        toFillLicenses();
 
-        if (null != cl.getResource("res/bg.jpg"))
+        if (null != cl.getResource("res/bg.jpg")) {
             this.setContentPane(new JLabel(new ImageIcon(cl.getResource("res/bg.jpg"))));
+        }
 
         this.setBounds(40 * Toolkit.getDefaultToolkit().getScreenSize().width / 100, 30 * Toolkit.getDefaultToolkit().getScreenSize().height / 100,  width, height);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLayout(null);
-
 
         login.setBorder(javax.swing.BorderFactory.createEmptyBorder());
         login.setLineWrap(true);
         login.setWrapStyleWord(true);
         login.setOpaque(true);
 
-
         login.setForeground(new Color(43, 33, 202));
         login.setFont(new Font("Microsoft JhengHei Light", Font.BOLD, 12));
-
 
         password.setForeground(new Color(132, 125, 202));
         password.setBorder(javax.swing.BorderFactory.createEmptyBorder());
@@ -102,12 +106,12 @@ class MainFrame extends JFrame {
                     encrypt.setOpaque(false);
                     encrypt.setBounds(encrypt.getX(), encrypt.getY() - 2, encrypt.getWidth(), encrypt.getHeight());
                 if (isTakenAccess){
-                    try {toOutputAndEncryptFile();} catch (IOException e1) {e1.printStackTrace();} catch (URISyntaxException e1) {
-                        e1.printStackTrace();
-                    }
+                    try {
+                        toOutputAndEncryptFile();
+                    } catch (IOException | URISyntaxException e1) {e1.printStackTrace();}
 
                     try{
-                        Process r = Runtime.getRuntime().exec("cmd /c  del decrypted.txt");
+                        Runtime.getRuntime().exec("cmd /c  del decrypted.txt");
                         }
                         catch(Exception e1){
                             System.out.println(e1.toString());
@@ -193,25 +197,34 @@ class MainFrame extends JFrame {
         DocumentListener listener = new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                if (login.getText().equals(correctLogin) && isPasswordCorrect(password.getPassword()))  try {
-                    toTakeAccess();} catch (InterruptedException e1) {e1.printStackTrace();} catch (IOException e1) {
-                    e1.printStackTrace();
+                if (login.getText().equals(correctLogin) && isPasswordCorrect(password.getPassword())) {
+                    try {
+                        grantAccess();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
                 }
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                if (login.getText().equals(correctLogin) && isPasswordCorrect(password.getPassword()))  try {
-                    toTakeAccess();} catch (InterruptedException e1) {e1.printStackTrace();} catch (IOException e1) {
-                    e1.printStackTrace();
+                if (login.getText().equals(correctLogin) && isPasswordCorrect(password.getPassword())) {
+                    try {
+                        grantAccess();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
                 }
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                if (login.getText().equals(correctLogin) && isPasswordCorrect(password.getPassword()))  try {
-                    toTakeAccess();} catch (InterruptedException e1) {e1.printStackTrace();} catch (IOException e1) {
-                    e1.printStackTrace();
+                if (login.getText().equals(correctLogin) && isPasswordCorrect(password.getPassword())) {
+                    try {
+                        grantAccess();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
                 }
             }
         };
@@ -229,13 +242,11 @@ class MainFrame extends JFrame {
     }
     private boolean isPasswordCorrect(char[] input){
         if (null != correctPassword && null != input){
-        if (input.length != correctPassword.length()) return false;
-
-        return Arrays.equals(input, this.correctPassword.toCharArray());
+            return Arrays.equals(input, this.correctPassword.toCharArray());
         }
         else return false;
     }
-    private void toTakeAccess() throws InterruptedException, IOException {
+    private void grantAccess() throws IOException {
        login.setForeground(new Color(85, 255, 133));
        password.setForeground(new Color(85, 255, 133));
 
@@ -315,72 +326,59 @@ class MainFrame extends JFrame {
         }
         else {logLabel.setText("crypted file is unable");passLabel.setText("crypted file is unable"); repaint();}
     }
-    private boolean toCheckLicense() throws IOException {
+    private boolean isLicenseValid() throws IOException {
         InputStream inRes = Main.class.getResourceAsStream("/res/License.txt");
-
-        license = new License();
-        license.setAlwaysOnTop(true);
 
         if (inRes != null) //ELSE UNREGISTERED
         {
             BufferedReader reader = new BufferedReader(new InputStreamReader(inRes));
-            String line;
+            String writtenLicense = reader.readLine();
 
-            if ((line = reader.readLine()) == null) {
-                license.licenseText.getDocument().addDocumentListener(new DocumentListener() {
+            if (writtenLicense == null) {
+                licenseFrame.setAlwaysOnTop(true);
+                licenseFrame.getLicenseText().getDocument().addDocumentListener(new DocumentListener() {
                     @Override
                     public void insertUpdate(DocumentEvent e) {
-                        for (int i = 0; i < license.arrayOfLicenses.size(); i++)
-                            if (license.licenseText.getText().equals(license.arrayOfLicenses.get(i))) {
-                                try {
-                                    toPrintLicense(license.arrayOfUsernames.get(i));
-                                    license.toClose();
+                        User foundUser = isLicensePresent(licenseFrame.getLicenseText().getText());
+                        if (foundUser != null){
+                            licenseFrame.close();
 
-                                    username = license.arrayOfUsernames.get(i);
+                            try {
+                                toPrintLicense(foundUser.getName(), foundUser.getLicense());
+                                username = foundUser.getName();
+                                logo.setText("Licensed for " + username + " by Aleksandrovich K., 2017");
+                                if (username.equals("friend")) correctLogin = "friend";
+                                else correctLogin = username.substring(0, username.indexOf(' '));
 
-                                    logo.setText("Licensed for " + username + " by Bulbum Lab, 2017");
+                                repaint();
 
-                                    if (username.equals("friend")) correctLogin = "friend";
-                                    else correctLogin = username.substring(0, username.indexOf(' '));
-
-                                    repaint();
-
-                                } catch (FileNotFoundException e1) {
-                                    e1.printStackTrace();
-                                } catch (InterruptedException e1) {
-                                    e1.printStackTrace();
-                                } catch (URISyntaxException e1) {
-                                    e1.printStackTrace();
-                                }
+                                // TODO Exception catching
+                            } catch (FileNotFoundException | URISyntaxException e1) {
+                                e1.printStackTrace();
                             }
+                        }
+
                     }
 
                     @Override
                     public void removeUpdate(DocumentEvent e) {
-                        for (int i = 0; i < license.arrayOfLicenses.size(); i++)
-                            if (license.licenseText.getText().equals(license.arrayOfLicenses.get(i))) {
-                                try {
-                                    toPrintLicense(license.arrayOfUsernames.get(i));
-                                    license.toClose();
+                        User foundUser = isLicensePresent(licenseFrame.getLicenseText().getText());
+                        if (foundUser != null){
+                            licenseFrame.close();
 
-                                    username = license.arrayOfUsernames.get(i);
+                            try {
+                                toPrintLicense(foundUser.getName(), foundUser.getLicense());
+                                username = foundUser.getName();
+                                logo.setText("Licensed for " + username + " by Aleksandrovich K., 2017");
+                                if (username.equals("friend")) correctLogin = "friend";
+                                else correctLogin = username.substring(0, username.indexOf(' '));
 
-                                    logo.setText("Licensed for " + username + " by Bulbum Lab, 2017");
+                                repaint();
 
-                                    if (username.equals("friend")) correctLogin = "friend";
-                                    else correctLogin = username.substring(0, username.indexOf(' '));
-
-                                    repaint();
-
-
-                                } catch (FileNotFoundException e1) {
-                                    e1.printStackTrace();
-                                } catch (InterruptedException e1) {
-                                    e1.printStackTrace();
-                                } catch (URISyntaxException e1) {
-                                    e1.printStackTrace();
-                                }
+                            } catch (FileNotFoundException | URISyntaxException e1) {
+                                e1.printStackTrace();
                             }
+                        }
                     }
 
                     @Override
@@ -392,37 +390,78 @@ class MainFrame extends JFrame {
               }
             else
              {
-                license.toClose();
+                licenseFrame.close();
 
-                if (line.equals("Username: friend."))
+                if (writtenLicense.equals("Username: friend."))
                     {
-                        logo.setText("Licensed for friend by Bulbum Lab, 2017");
+                        logo.setText("Licensed for friend by Aleksandrovich K., 2017-2020");
                         correctLogin = "friend";
                     }
                     else
                     {
-                        logo.setText("Licensed for" + line.substring(line.indexOf(' '), line.indexOf('.')) + " by Bulbum Lab, 2017");
-                        correctLogin = line.substring(10, line.indexOf('.')).substring(0, line.substring(10, line.indexOf('.')).indexOf(' ')); //It's name
+                        logo.setText("Licensed for" + writtenLicense.substring(writtenLicense.indexOf(' '), writtenLicense.indexOf('.')) + " by Bulbum Lab, 2017");
+                        correctLogin = writtenLicense.substring(10, writtenLicense.indexOf('.')).substring(0, writtenLicense.substring(10, writtenLicense.indexOf('.')).indexOf(' ')); //It's name
                     }
                     return true;
              }
 
         }
         else {
-             license.labelLicense.setText("File with license is not existing!");
+             licenseFrame.setAlwaysOnTop(true);
+             licenseFrame.getLabelLicense().setText("File with licenseFrame is not existing!");
              repaint();
              }
         repaint();
         return false;
     }
-    private void toPrintLicense(String user) throws FileNotFoundException, InterruptedException, URISyntaxException {
+
+    private void toFillLicenses() throws IOException {
+        InputStream inputStream = Main.class.getResourceAsStream("/res/kernellic.txt");
+
+        if (inputStream != null) //NO FILE WITH SECRETS
+        {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+
+            String line;
+            while ((line = reader.readLine()) != null)
+            {
+                line = MainFrame.toSubstitute(line);
+
+                String name = line.substring(line.indexOf(' ')+1);
+                String license = line.substring(0, line.indexOf(' '));
+                String[] creds = line.split(" "); // TODO is it better?
+                this.usersData.add(new User(name, license));
+                //d4c2a1ec869e1774a2f4b81163e1a968 friend
+            }
+
+            inputStream.close();
+        }
+        else {
+            this.licenseFrame.getLabelLicense().setText("licenses registration is unable");
+            repaint();
+        }
+    }
+    /**
+     * @param inputtedLicense license inputted on UI
+     * @return username of user with given license
+     */
+    private User isLicensePresent(String inputtedLicense) {
+        for (User user: usersData) {
+            if (inputtedLicense.equals(user.getLicense())) {
+                return user;
+            }
+        }
+        return null;
+    }
+
+    private void toPrintLicense(String user, String license) throws FileNotFoundException, URISyntaxException {
 
         if (null != getClass().getResource("/res/License.txt")) {
             URL resourceUrl = getClass().getResource("/res/License.txt");
             File file = new File(resourceUrl.toURI());
             PrintStream output = new PrintStream(file);
 
-            output.print("Username: " + user + ".\nLicensed by Bulbum Lab, Minsk. 2017. All rights reserved.\nCopying, illegal distribution of program fragments, source code, resources, and encryption algorithm is prosecuted in accordance with the legislation of the Russian Federation under the Federal Law \"On Trade Secrets\" of July 29, 2004 N 98-FZ.\nPersonal license: " + license.licenseText.getText());
+            output.print("Username: " + user + ".\nLicensed by Aleksandrovich K., Minsk. 2017-2020. All rights reserved.\nCopying, illegal distribution of program fragments, source code, resources, and encryption algorithm is prosecuted in accordance with the legislation of the Russian Federation under the Federal Law \"On Trade Secrets\" of July 29, 2004 N 98-FZ.\nPersonal license: " + license);
             output.close();
         }
         else {logLabel.setText("invalid license");passLabel.setText("invalid license"); repaint();}
@@ -453,27 +492,22 @@ class MainFrame extends JFrame {
             repaint();
         }
     }
-    private void toReadPassword() throws IOException, URISyntaxException {
+    private void toReadPassword() throws IOException {
 
-        InputStream inRes = Main.class.getResourceAsStream("/res/config.txt");
-        ObjectInputStream ins = null;
-
+        InputStream inRes = getClass().getResourceAsStream("/res/config.txt");
         if (inRes != null) //NOT PASSWORD
         {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inRes));
-            String line;
-
             try
             {
-                ins = new ObjectInputStream(inRes);
-                correctPassword = (String) ins.readObject();
-                correctPassword = toSubstitute(correctPassword);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(inRes));
+                String pass = reader.readLine();
+                this.correctPassword = toSubstitute(pass); //(String) ins.readObject();
 
                 inRes.close();
-                ins.close();
+                //ins.close();
             }
                 catch (FileNotFoundException e) {e.printStackTrace();}
-                catch (ClassNotFoundException e){e.printStackTrace();}
+                //catch (ClassNotFoundException e){e.printStackTrace();}
         }
             else {
                 passLabel.setText("password configuration is invalid");
@@ -481,8 +515,8 @@ class MainFrame extends JFrame {
                 repaint();
             }
     }
-    static String toSubstitute(String text){
-        StringBuilder substituted = new StringBuilder("");
+    private static String toSubstitute(String text){
+        StringBuilder substituted = new StringBuilder();
 
         for (int i=0; i<text.length(); i++)
             switch (text.charAt(i)){
