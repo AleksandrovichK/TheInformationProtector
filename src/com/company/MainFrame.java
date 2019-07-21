@@ -11,7 +11,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectOutputStream;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -39,8 +38,8 @@ public class MainFrame extends JFrame {
     private JLabel passLabel = new JLabel("password");
     private JLabel logo = new JLabel();
 
-    private JButton encrypt;
-    private JButton setPassword;
+    private JButton encryptButton;
+    private JButton passwordButton;
 
     private boolean isTakenAccess = false;
     private boolean newPasswordTyped = false;
@@ -54,14 +53,18 @@ public class MainFrame extends JFrame {
 
         settings();
 
+        //d4c2a1ec869e1774a2f4b81163e1a968 friend
         switch (datastore.checkLicenseStatus()) {
-            case FILE_IS_ABSENT:{
+            case FILE_IS_ABSENT: {
                 licenseFrame.setAlwaysOnTop(true);
-                licenseFrame.getLabelLicense().setText("File with license is not existing!");
+                licenseFrame.getLicenseText().setText("Repair configuration or the program won't work!");
+                licenseFrame.getLabelLicense().setText("configuration is not existing!");
+                licenseFrame.getLabelLicense().setBounds(90, 120, 220, 20);
+                licenseFrame.getLabelLicense().setForeground(Color.ORANGE);
                 licenseFrame.repaint();
                 break;
             }
-            case FILE_IS_EMPTY:{
+            case FILE_IS_EMPTY: {
                 licenseFrame.setAlwaysOnTop(true);
                 licenseFrame.getLicenseText().getDocument().addDocumentListener(new DocumentListener() {
                     @Override
@@ -71,14 +74,14 @@ public class MainFrame extends JFrame {
                             licenseFrame.close();
 
                             try {
-                                switch (datastore.printLicenseToFile(foundUser.getName(), foundUser.getLicense())){
+                                switch (datastore.printLicenseToFile(foundUser.getName(), foundUser.getLicense())) {
                                     case FILE_IS_ABSENT: {
                                         logLabel.setText("invalid license file");
                                         passLabel.setText("invalid license file");
                                         repaint();
                                         break;
                                     }
-                                    case SUCCESS:{
+                                    case SUCCESS: {
                                         setVisible(true);
                                         break;
                                     }
@@ -92,7 +95,7 @@ public class MainFrame extends JFrame {
                                 }
                                 repaint();
                                 // TODO Exception catching
-                            } catch (FileNotFoundException | URISyntaxException e1) {
+                            } catch (FileNotFoundException e1) {
                                 e1.printStackTrace();
                             }
                         }
@@ -101,7 +104,7 @@ public class MainFrame extends JFrame {
 
                     @Override
                     public void removeUpdate(DocumentEvent e) {
-                       this.insertUpdate(e);
+                        this.insertUpdate(e);
                     }
 
                     @Override
@@ -113,9 +116,122 @@ public class MainFrame extends JFrame {
                 licenseFrame.repaint();
                 break;
             }
-            case SUCCESS:{
-                logo.setText("Licensed for" + datastore.getCorrectLogin() + " by Aleksandrovich K., 2017-2020");
+            case FILE_CONTAINS_WRONG_INFO: {
+                licenseFrame.setAlwaysOnTop(true);
+                licenseFrame.getLicenseText().setText("Your existing license is fake!");
+                licenseFrame.getLabelLicense().setText("insert correct license");
+                licenseFrame.getLabelLicense().setForeground(Color.ORANGE);
+                licenseFrame.getLabelLicense().setBounds(90, 120, 220, 20);
+                licenseFrame.getLicenseText().getDocument().addDocumentListener(new DocumentListener() {
+                    @Override
+                    public void insertUpdate(DocumentEvent e) {
+                        User foundUser = datastore.isLicensePresent(licenseFrame.getLicenseText().getText());
+                        if (foundUser != null) {
+                            licenseFrame.close();
+
+                            try {
+                                switch (datastore.printLicenseToFile(foundUser.getName(), foundUser.getLicense())) {
+                                    case FILE_IS_ABSENT: {
+                                        logLabel.setText("invalid license file");
+                                        passLabel.setText("invalid license file");
+                                        repaint();
+                                        break;
+                                    }
+                                    case SUCCESS: {
+                                        setVisible(true);
+                                        break;
+                                    }
+                                }
+                                username = foundUser.getName();
+                                logo.setText("Licensed for " + username + " by Aleksandrovich K., 2017-2020");
+                                if (username.equals("friend")) {
+                                    datastore.setCorrectLogin("friend");
+                                } else {
+                                    datastore.setCorrectLogin(username.substring(0, username.indexOf(' ')));
+                                }
+                                repaint();
+                                // TODO Exception catching
+                            } catch (FileNotFoundException e1) {
+                                e1.printStackTrace();
+                            }
+                        }
+
+                    }
+
+                    @Override
+                    public void removeUpdate(DocumentEvent e) {
+                        this.insertUpdate(e);
+                    }
+
+                    @Override
+                    public void changedUpdate(DocumentEvent e) {
+
+                    }
+                });
+                licenseFrame.setVisible(true);
+                licenseFrame.repaint();
+                break;
+            }
+            case FILE_IS_CORRUPTED: {
+                licenseFrame.setAlwaysOnTop(true);
+                licenseFrame.getLabelLicense().setText("insert license again");
+                licenseFrame.getLabelLicense().setForeground(Color.ORANGE);
+                licenseFrame.getLabelLicense().setBounds(110, 120, 220, 20);
+                licenseFrame.getLicenseText().setText("There is something wrong with configuration file!");
+                licenseFrame.getLicenseText().getDocument().addDocumentListener(new DocumentListener() {
+                    @Override
+                    public void insertUpdate(DocumentEvent e) {
+                        User foundUser = datastore.isLicensePresent(licenseFrame.getLicenseText().getText());
+                        if (foundUser != null) {
+                            licenseFrame.close();
+
+                            try {
+                                switch (datastore.printLicenseToFile(foundUser.getName(), foundUser.getLicense())) {
+                                    case FILE_IS_ABSENT: {
+                                        logLabel.setText("invalid license file");
+                                        passLabel.setText("invalid license file");
+                                        repaint();
+                                        break;
+                                    }
+                                    case SUCCESS: {
+                                        setVisible(true);
+                                        break;
+                                    }
+                                }
+                                username = foundUser.getName();
+                                logo.setText("Licensed for " + username + " by Aleksandrovich K., 2017-2020");
+                                if (username.equals("friend")) {
+                                    datastore.setCorrectLogin("friend");
+                                } else {
+                                    datastore.setCorrectLogin(username.substring(0, username.indexOf(' ')));
+                                }
+                                repaint();
+                                // TODO Exception catching
+                            } catch (FileNotFoundException e1) {
+                                e1.printStackTrace();
+                            }
+                        }
+
+                    }
+
+                    @Override
+                    public void removeUpdate(DocumentEvent e) {
+                        this.insertUpdate(e);
+                    }
+
+                    @Override
+                    public void changedUpdate(DocumentEvent e) {
+
+                    }
+                });
+                licenseFrame.setVisible(true);
+                licenseFrame.repaint();
+                break;
+            }
+            case SUCCESS: {
+                logo.setText("Licensed for " + datastore.getCorrectLogin() + " by Aleksandrovich K., 2017-2020");
                 licenseFrame.close();
+                this.setVisible(true);
                 this.repaint();
                 break;
             }
@@ -125,12 +241,19 @@ public class MainFrame extends JFrame {
     private void settings() {
         this.setVisible(false);
 
-        switch (this.datastore.toReadPassword()){
-
+        switch (this.datastore.toReadPassword()) {
+            case FILE_IS_ABSENT: {
+            }
+            case FILE_IS_EMPTY: {
+                passLabel.setText("password configuration is not exist");
+                break;
+            }
+            case SUCCESS: {
+                break;
+            }
         }
-            passLabel.setText("password configuration is invalid");
 
-        // may be repaint should be here too
+        this.repaint();
 
         if (!this.datastore.toFillLicenses()) {
             this.licenseFrame.getLabelLicense().setText("licenses registration is unable");
@@ -164,8 +287,9 @@ public class MainFrame extends JFrame {
 
         if (null != cl.getResource("res/encrypt.jpg")) {
             ImageIcon icon3 = new ImageIcon(cl.getResource("res/encrypt.jpg"));
-            encrypt = new JButton(icon3);
-            encrypt.addMouseListener(new MouseListener() {
+            encryptButton = new JButton(icon3);
+            encryptButton.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
+            encryptButton.addMouseListener(new MouseListener() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
 
@@ -173,17 +297,17 @@ public class MainFrame extends JFrame {
 
                 @Override
                 public void mousePressed(MouseEvent e) {
-                    if (!encrypt.isOpaque()) {
-                        encrypt.setOpaque(true);
-                        encrypt.setBounds(encrypt.getX(), encrypt.getY() + 2, encrypt.getWidth(), encrypt.getHeight());
+                    if (!encryptButton.isOpaque()) {
+                        encryptButton.setOpaque(true);
+                        encryptButton.setBounds(encryptButton.getX(), encryptButton.getY() + 2, encryptButton.getWidth(), encryptButton.getHeight());
                     }
                 }
 
                 @Override
                 public void mouseReleased(MouseEvent e) {
-                    if (encrypt.isOpaque()) {
-                        encrypt.setOpaque(false);
-                        encrypt.setBounds(encrypt.getX(), encrypt.getY() - 2, encrypt.getWidth(), encrypt.getHeight());
+                    if (encryptButton.isOpaque()) {
+                        encryptButton.setOpaque(false);
+                        encryptButton.setBounds(encryptButton.getX(), encryptButton.getY() - 2, encryptButton.getWidth(), encryptButton.getHeight());
                         if (isTakenAccess) {
                             try {
                                 toOutputAndEncryptFile();
@@ -216,8 +340,9 @@ public class MainFrame extends JFrame {
 
         if (null != cl.getResource("res/sets.jpg")) {
             ImageIcon icon4 = new ImageIcon(cl.getResource("res/sets.jpg"));
-            setPassword = new JButton(icon4);
-            setPassword.addMouseListener(new MouseListener() {
+            passwordButton = new JButton(icon4);
+            passwordButton.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
+            passwordButton.addMouseListener(new MouseListener() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
 
@@ -225,22 +350,22 @@ public class MainFrame extends JFrame {
 
                 @Override
                 public void mousePressed(MouseEvent e) {
-                    if (!setPassword.isOpaque()) {
-                        setPassword.setOpaque(true);
-                        setPassword.setBounds(setPassword.getX(), setPassword.getY() + 2, setPassword.getWidth(), setPassword.getHeight());
+                    if (!passwordButton.isOpaque()) {
+                        passwordButton.setOpaque(true);
                     }
+                    passwordButton.setBounds(passwordButton.getX(), passwordButton.getY() + 2, passwordButton.getWidth(), passwordButton.getHeight());
                 }
 
                 @Override
                 public void mouseReleased(MouseEvent e) {
-                    if (setPassword.isOpaque()) {
-                        setPassword.setOpaque(false);
-                        setPassword.setBounds(setPassword.getX(), setPassword.getY() - 2, setPassword.getWidth(), setPassword.getHeight());
+                    if (passwordButton.isOpaque()) {
+                        passwordButton.setOpaque(false);
 
                         if (!newPasswordTyped && isTakenAccess) {
                             passLabel.setText("input new password");
                             password.setText("");
                             newPasswordTyped = !newPasswordTyped;
+                            passwordButton.setBorder(BorderFactory.createLineBorder(new Color(234, 31, 6), 3));
                             repaint();
                             return;
                         }
@@ -248,8 +373,10 @@ public class MainFrame extends JFrame {
                         if (newPasswordTyped && isTakenAccess) {
                             newPasswordTyped = !newPasswordTyped;
 
+                            passwordButton.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
                             datastore.setCorrectPassword(new String(password.getPassword()));
                             passLabel.setText("password");
+                            repaint();
                             try {
                                 toChangePassword();
                             } catch (IOException | URISyntaxException e1) {
@@ -257,6 +384,7 @@ public class MainFrame extends JFrame {
                             }
                         }
                     }
+                    passwordButton.setBounds(passwordButton.getX(), passwordButton.getY() - 2, passwordButton.getWidth(), passwordButton.getHeight());
                 }
 
                 @Override
@@ -328,9 +456,9 @@ public class MainFrame extends JFrame {
         toInputAndDecryptFile();
         isTakenAccess = true;
 
-        if (null != encrypt && null != setPassword) {
-            this.add(encrypt).setBounds(width - 42, height - 72, 22, 22);
-            this.add(setPassword).setBounds(width - 72, height - 72, 22, 22);
+        if (null != encryptButton && null != passwordButton) {
+            this.add(encryptButton).setBounds(width - 42, height - 72, 22, 22);
+            this.add(passwordButton).setBounds(width - 72, height - 72, 22, 22);
         } else {
             passLabel.setText("buttons are not able!");
             repaint();
@@ -366,7 +494,7 @@ public class MainFrame extends JFrame {
             output.close();
 
             try {
-                Process pr = Runtime.getRuntime().exec("cmd /c decrypted.txt");
+                Runtime.getRuntime().exec("cmd /c decrypted.txt");
             } catch (Exception e1) {
                 e1.printStackTrace();
             }
@@ -415,18 +543,14 @@ public class MainFrame extends JFrame {
 
     private void toChangePassword() throws IOException, URISyntaxException {
         if (null != getClass().getResource("/res/config.txt")) {
-            URL resourceUrl = getClass().getResource("/res/config.txt");
-            File file = new File(resourceUrl.toURI());
-            FileOutputStream fos = new FileOutputStream(file);
-            ObjectOutputStream oos = null;
-
             try {
-                String toWrite = Utils.toSubstitute(datastore.getCorrectPassword());
-                oos = new ObjectOutputStream(fos);
+                URL resourceUrl = getClass().getResource("/res/config.txt");
+                File file = new File(resourceUrl.toURI());
+                FileOutputStream fos = new FileOutputStream(file);
 
-                oos.writeObject(toWrite);
-                oos.flush();
-                oos.close();
+                String toWrite = Utils.toSubstitute(datastore.getCorrectPassword());
+                fos.write(toWrite.getBytes());
+                fos.close();
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
@@ -88,17 +89,19 @@ public class Datastore {
             if (firstLine == null) {
                 return FileStatus.FILE_IS_EMPTY;
             } else {
-                String[] storedUsername = firstLine.split(":");
-                String[] storedLicense = secondLine.split(":");
+                if (firstLine.contains(":") && secondLine.contains(":")){
+                    String[] storedUsername = firstLine.split(":");
+                    String[] storedLicense = secondLine.split(":");
 
-                if (storedUsername.length != 0 && storedLicense.length != 0) {
-                    for (User user : this.usersData) {
-                        if (user.getName().equals(storedUsername[1]) && user.getLicense().equals(storedLicense[1])) { // user is valid
-                            this.correctLogin = user.getName();
-                            return FileStatus.SUCCESS;
+                    if (storedUsername.length >1 && storedLicense.length >1) {
+                        for (User user : this.usersData) {
+                            if (user.getName().equals(storedUsername[1]) && user.getLicense().equals(storedLicense[1])) { // user is valid
+                                this.correctLogin = user.getName();
+                                return FileStatus.SUCCESS;
+                            }
                         }
+                        return FileStatus.FILE_CONTAINS_WRONG_INFO;
                     }
-                    return FileStatus.FILE_CONTAINS_WRONG_INFO;
                 }
                 return FileStatus.FILE_IS_CORRUPTED;
             }
@@ -120,21 +123,23 @@ public class Datastore {
         return null;
     }
 
-    public FileStatus printLicenseToFile(String user, String license) throws FileNotFoundException, URISyntaxException {
+    public FileStatus printLicenseToFile(String user, String license) throws FileNotFoundException {
         if (null != getClass().getResource("/res/License.txt")) {
-            URL resourceUrl = getClass().getResource("/res/License.txt");
-            File file = new File(resourceUrl.toURI());
-            PrintStream output = new PrintStream(file);
-
-            output.print(
-                    "Username:" + user + "\n" +
-                    "License:" + license + "\n" +
-                    "Licensed by Aleksandrovich K., Minsk. 2017-2020. All rights reserved.\nCopying, illegal distribution of program fragments, source code, resources, and encryption algorithm is prosecuted in accordance with the legislation of the Russian Federation under the Federal Law \"On Trade Secrets\" of July 29, 2004 N 98-FZ.");
-            output.close();
+            try {
+                URL resourceUrl = getClass().getResource("/res/License.txt");
+                File file = new File(resourceUrl.toURI());
+                PrintStream output = new PrintStream(file);
+                output.print(
+                        "Username:" + user + "\n" +
+                                "License:" + license + "\n" +
+                                "Licensed by Aleksandrovich K., Minsk. 2017-2020. All rights reserved.\nCopying, illegal distribution of program fragments, source code, resources, and encryption algorithm is prosecuted in accordance with the legislation of the Russian Federation under the Federal Law \"On Trade Secrets\" of July 29, 2004 N 98-FZ.");
+                output.close();
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+            }
             return FileStatus.SUCCESS;
-        } else {
-            return FileStatus.FILE_IS_ABSENT;
         }
+        return FileStatus.FILE_IS_ABSENT;
     }
 
     public String getCorrectPassword() {
