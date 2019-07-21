@@ -1,4 +1,4 @@
-package com.company.io;
+package com.aleksandrovich.io;
 
 public class Utils {
     public static String toSubstitute(String text) {

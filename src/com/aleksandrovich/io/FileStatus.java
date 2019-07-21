@@ -1,4 +1,4 @@
-package com.company.io;
+package com.aleksandrovich.io;
 
 public enum FileStatus {
  FILE_IS_ABSENT,

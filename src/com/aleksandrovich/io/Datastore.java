@@ -1,4 +1,4 @@
-package com.company.io;
+package com.aleksandrovich.io;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -7,15 +7,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.company.Main;
-import com.company.User;
+import com.aleksandrovich.Main;
+import com.aleksandrovich.User;
 
 public class Datastore {
     private String correctPassword;

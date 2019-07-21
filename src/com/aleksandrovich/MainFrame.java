@@ -1,4 +1,4 @@
-package com.company;
+package com.aleksandrovich;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -20,12 +20,19 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import com.company.io.Datastore;
-import com.company.io.Utils;
+import com.aleksandrovich.io.Datastore;
+import com.aleksandrovich.io.Utils;
 
-// 2.0 Release version
-
-public class MainFrame extends JFrame {
+/**
+ * Release version: 2.0
+ *
+ * All rights reserved, 2017-2020.
+ * The source code is proprietary and private property of customer.
+ * Reverse engineering is restricted. All used code delivered "as-is" under Apache 2.0 license.
+ *
+ * @author AleksandrovichK
+ * */
+class MainFrame extends JFrame {
     private int width = 500;
     private int height = 300;
 
@@ -505,16 +512,17 @@ public class MainFrame extends JFrame {
             buffer.append(temp);
             buffer.append("\n");
         }
-        inputStream.close();    //inputting ended
+        inputStream.close();
 
+        String lineSeparator = System.getProperty("line.separator");
         StringBuilder cryptedText = new StringBuilder();
         for (int i = 0; i < buffer.length(); i++) {
             if (buffer.charAt(i) == '\n') {
-                cryptedText.append('\n');
+                cryptedText.append(lineSeparator);
                 continue;
             }
             cryptedText.append((char) ((int) buffer.charAt(i) + 13));
-        }  //handling ended
+        }
 
         if (null != getClass().getResource("/res/crypted.txt")) {
             URL resourceUrl = getClass().getResource("/res/crypted.txt");
@@ -524,8 +532,8 @@ public class MainFrame extends JFrame {
             output.print(cryptedText);
             output.close();
         } else {
-            logLabel.setText("crypted file is unable");
-            passLabel.setText("crypted file is unable");
+            logLabel.setText("crypted file is unable!");
+            passLabel.setText("crypted file is unable!");
             repaint();
         }
     }

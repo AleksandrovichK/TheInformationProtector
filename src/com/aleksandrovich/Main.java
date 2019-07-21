@@ -1,4 +1,4 @@
-package com.company;
+package com.aleksandrovich;
 
 import java.io.IOException;
 

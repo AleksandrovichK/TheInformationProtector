@@ -1,4 +1,4 @@
-package com.company;
+package com.aleksandrovich;
 
 import java.awt.*;
 
@@ -36,15 +36,15 @@ class License extends JFrame {
         this.setVisible(true);
     }
 
-    public void close(){
+    void close(){
         this.setVisible(false);
     }
 
-    public JTextArea getLicenseText() {
+    JTextArea getLicenseText() {
         return licenseText;
     }
 
-    public JLabel getLabelLicense() {
+    JLabel getLabelLicense() {
         return labelLicense;
     }
 }
