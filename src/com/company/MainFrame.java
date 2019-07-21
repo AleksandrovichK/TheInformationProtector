@@ -416,24 +416,12 @@ public class MainFrame extends JFrame {
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                if (login.getText().equals(datastore.getCorrectLogin()) && datastore.isPasswordCorrect(password.getPassword())) {
-                    try {
-                        grantAccess();
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    }
-                }
+                insertUpdate(e);
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                if (login.getText().equals(datastore.getCorrectLogin()) && datastore.isPasswordCorrect(password.getPassword())) {
-                    try {
-                        grantAccess();
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    }
-                }
+                insertUpdate(e);
             }
         };
 
@@ -460,7 +448,7 @@ public class MainFrame extends JFrame {
             this.add(encryptButton).setBounds(width - 42, height - 72, 22, 22);
             this.add(passwordButton).setBounds(width - 72, height - 72, 22, 22);
         } else {
-            passLabel.setText("buttons are not able!");
+            passLabel.setText("buttons are not available!");
             repaint();
         }
     }
@@ -479,10 +467,11 @@ public class MainFrame extends JFrame {
                 buffer.append("\n");
             }
 
+            String lineSeparator = System.getProperty("line.separator");
             StringBuilder decryptedText = new StringBuilder();
             for (int i = 0; i < buffer.length(); i++) {
                 if (buffer.charAt(i) == '\n') {
-                    decryptedText.append('\n');
+                    decryptedText.append(lineSeparator);
                     continue;
                 }
                 decryptedText.append((char) ((int) buffer.charAt(i) - 13));
