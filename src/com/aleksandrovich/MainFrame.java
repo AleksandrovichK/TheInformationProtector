@@ -284,19 +284,22 @@ class MainFrame extends JFrame {
                         encryptButton.setBounds(encryptButton.getX(), encryptButton.getY() - 2, encryptButton.getWidth(), encryptButton.getHeight());
                         if (isAccessGranted) {
                             try {
+                                //TODO must return file status
                                 toOutputAndEncryptFile();
                             } catch (IOException | URISyntaxException e1) {
-                                e1.printStackTrace();
+                                passLabel.setText("encrypting your info failed due to file absence");
+                                repaint();
                             }
 
                             try {
+                                //TODO test that
                                 Runtime.getRuntime().exec("cmd /c  del decrypted.txt");
+                                System.exit(0);
                             } catch (Exception e1) {
-                                System.out.println(e1.toString());
-                                e1.printStackTrace();
+                                passLabel.setText("secret file removing failed!");
+                                repaint();
                             }
                         }
-                        System.exit(0);
                     }
                 }
 
