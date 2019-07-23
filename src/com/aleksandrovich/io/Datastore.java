@@ -51,7 +51,7 @@ public class Datastore {
     }
 
     public boolean toFillLicenses() {
-        InputStream inputStream = Main.class.getResourceAsStream("/res/kernellic.txt");
+        InputStream inputStream = getClass().getResourceAsStream("/res/kernellic.txt");
 
         if (inputStream != null) { // FILE IS ABSENT
             try {
@@ -60,10 +60,8 @@ public class Datastore {
                 while ((line = reader.readLine()) != null) {
                     line = Utils.toSubstitute(line);
 
-                    String name = line.substring(line.indexOf(' ') + 1);
-                    String license = line.substring(0, line.indexOf(' '));
-                    String[] creds = line.split(" "); // TODO is it better?
-                    this.usersData.add(new User(name, license));
+                    String[] creds = line.split(":");
+                    this.usersData.add(new User( creds[1], creds[0]));
                     //d4c2a1ec869e1774a2f4b81163e1a968 friend
                 }
                 inputStream.close();

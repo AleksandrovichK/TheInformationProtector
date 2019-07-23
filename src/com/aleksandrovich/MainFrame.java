@@ -36,8 +36,8 @@ class MainFrame extends JFrame {
     private int width = 500;
     private int height = 300;
 
-    private JTextArea login = new JTextArea();
-    private JPasswordField password = new JPasswordField();
+    private JTextArea loginField = new JTextArea();
+    private JPasswordField passwordField = new JPasswordField();
 
     private String username;
 
@@ -48,13 +48,11 @@ class MainFrame extends JFrame {
     private JButton encryptButton;
     private JButton passwordButton;
 
-    private boolean isTakenAccess = false;
+    private boolean isAccessGranted = false;
     private boolean newPasswordTyped = false;
 
     private License licenseFrame = new License();
     private Datastore datastore = new Datastore();
-
-    private ClassLoader cl = this.getClass().getClassLoader();
 
     MainFrame() throws IOException {
 
@@ -101,9 +99,9 @@ class MainFrame extends JFrame {
                                     datastore.setCorrectLogin(username.substring(0, username.indexOf(' ')));
                                 }
                                 repaint();
-                                // TODO Exception catching
                             } catch (FileNotFoundException e1) {
-                                e1.printStackTrace();
+                                passLabel.setText("password store is not found!");
+                                repaint();
                             }
                         }
 
@@ -157,9 +155,9 @@ class MainFrame extends JFrame {
                                     datastore.setCorrectLogin(username.substring(0, username.indexOf(' ')));
                                 }
                                 repaint();
-                                // TODO Exception catching
                             } catch (FileNotFoundException e1) {
-                                e1.printStackTrace();
+                                passLabel.setText("password store is not found!");
+                                repaint();
                             }
                         }
 
@@ -213,9 +211,9 @@ class MainFrame extends JFrame {
                                     datastore.setCorrectLogin(username.substring(0, username.indexOf(' ')));
                                 }
                                 repaint();
-                                // TODO Exception catching
                             } catch (FileNotFoundException e1) {
-                                e1.printStackTrace();
+                                passLabel.setText("password store is not found!");
+                                repaint();
                             }
                         }
 
@@ -267,24 +265,25 @@ class MainFrame extends JFrame {
         }
         this.repaint();
 
-        if (null != cl.getResource("res/bg.jpg")) {
-            this.setContentPane(new JLabel(new ImageIcon(cl.getResource("res/bg.jpg"))));
+        URL bgImageResource = getClass().getResource("res/bg.jpg");
+        if (null != bgImageResource) {
+            this.setContentPane(new JLabel(new ImageIcon(bgImageResource)));
         }
 
         this.setBounds(40 * Toolkit.getDefaultToolkit().getScreenSize().width / 100, 30 * Toolkit.getDefaultToolkit().getScreenSize().height / 100, width, height);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLayout(null);
 
-        login.setBorder(javax.swing.BorderFactory.createEmptyBorder());
-        login.setLineWrap(true);
-        login.setWrapStyleWord(true);
-        login.setOpaque(true);
+        loginField.setBorder(javax.swing.BorderFactory.createEmptyBorder());
+        loginField.setLineWrap(true);
+        loginField.setWrapStyleWord(true);
+        loginField.setOpaque(true);
 
-        login.setForeground(new Color(43, 33, 202));
-        login.setFont(new Font("Microsoft JhengHei Light", Font.BOLD, 12));
+        loginField.setForeground(new Color(43, 33, 202));
+        loginField.setFont(new Font("Microsoft JhengHei Light", Font.BOLD, 12));
 
-        password.setForeground(new Color(132, 125, 202));
-        password.setBorder(javax.swing.BorderFactory.createEmptyBorder());
+        passwordField.setForeground(new Color(132, 125, 202));
+        passwordField.setBorder(javax.swing.BorderFactory.createEmptyBorder());
 
         logLabel.setForeground(new Color(196, 202, 198));
         logLabel.setFont(new Font("Microsoft JhengHei Light", Font.BOLD, 12));
@@ -292,9 +291,9 @@ class MainFrame extends JFrame {
         passLabel.setForeground(new Color(196, 202, 198));
         passLabel.setFont(new Font("Microsoft JhengHei Light", Font.BOLD, 12));
 
-        if (null != cl.getResource("res/encrypt.jpg")) {
-            ImageIcon icon3 = new ImageIcon(cl.getResource("res/encrypt.jpg"));
-            encryptButton = new JButton(icon3);
+        URL encryptImage = getClass().getResource("res/encrypt.jpg");
+        if (null != encryptImage) {
+            encryptButton = new JButton(new ImageIcon(encryptImage));
             encryptButton.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
             encryptButton.addMouseListener(new MouseListener() {
                 @Override
@@ -315,7 +314,7 @@ class MainFrame extends JFrame {
                     if (encryptButton.isOpaque()) {
                         encryptButton.setOpaque(false);
                         encryptButton.setBounds(encryptButton.getX(), encryptButton.getY() - 2, encryptButton.getWidth(), encryptButton.getHeight());
-                        if (isTakenAccess) {
+                        if (isAccessGranted) {
                             try {
                                 toOutputAndEncryptFile();
                             } catch (IOException | URISyntaxException e1) {
@@ -345,9 +344,9 @@ class MainFrame extends JFrame {
             });
         }
 
-        if (null != cl.getResource("res/sets.jpg")) {
-            ImageIcon icon4 = new ImageIcon(cl.getResource("res/sets.jpg"));
-            passwordButton = new JButton(icon4);
+        URL resource = getClass().getResource("res/sets.jpg");
+        if (null != resource) {
+            passwordButton = new JButton(new ImageIcon(resource));
             passwordButton.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
             passwordButton.addMouseListener(new MouseListener() {
                 @Override
@@ -368,30 +367,28 @@ class MainFrame extends JFrame {
                     if (passwordButton.isOpaque()) {
                         passwordButton.setOpaque(false);
 
-                        if (!newPasswordTyped && isTakenAccess) {
+                        if (!newPasswordTyped && isAccessGranted) {
+                            newPasswordTyped = true;
+
                             passLabel.setText("input new password");
-                            password.setText("");
-                            newPasswordTyped = !newPasswordTyped;
+                            passwordField.setText("");
                             passwordButton.setBorder(BorderFactory.createLineBorder(new Color(234, 31, 6), 3));
                             repaint();
                             return;
                         }
 
-                        if (newPasswordTyped && isTakenAccess) {
-                            newPasswordTyped = !newPasswordTyped;
+                        if (newPasswordTyped && isAccessGranted) {
+                            newPasswordTyped = false;
 
-                            passwordButton.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
-                            datastore.setCorrectPassword(new String(password.getPassword()));
                             passLabel.setText("password");
+                            datastore.setCorrectPassword(new String(passwordField.getPassword()));
+                            passwordButton.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
                             repaint();
-                            try {
-                                toChangePassword();
-                            } catch (IOException | URISyntaxException e1) {
-                                e1.printStackTrace();
-                            }
+
+                            changePassword();
                         }
                     }
-                    passwordButton.setBounds(passwordButton.getX(), passwordButton.getY() - 2, passwordButton.getWidth(), passwordButton.getHeight());
+                    passwordButton.setBounds(passwordButton.getX(), passwordButton.getY() - 4, passwordButton.getWidth(), passwordButton.getHeight());
                 }
 
                 @Override
@@ -412,7 +409,7 @@ class MainFrame extends JFrame {
         DocumentListener listener = new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                if (login.getText().equals(datastore.getCorrectLogin()) && datastore.isPasswordCorrect(password.getPassword())) {
+                if (loginField.getText().equals(datastore.getCorrectLogin()) && datastore.isPasswordCorrect(passwordField.getPassword())) {
                     try {
                         grantAccess();
                     } catch (IOException e1) {
@@ -432,11 +429,11 @@ class MainFrame extends JFrame {
             }
         };
 
-        password.getDocument().addDocumentListener(listener);
-        login.getDocument().addDocumentListener(listener);
+        passwordField.getDocument().addDocumentListener(listener);
+        loginField.getDocument().addDocumentListener(listener);
 
-        this.add(login).setBounds(40, 100, 400, 20);
-        this.add(password).setBounds(40, 160, 400, 20);
+        this.add(loginField).setBounds(40, 100, 400, 20);
+        this.add(passwordField).setBounds(40, 160, 400, 20);
         this.add(logLabel).setBounds(40, 120, 400, 20);
         this.add(passLabel).setBounds(40, 180, 400, 20);
         this.add(logo).setBounds(180, 250, 340, 20);
@@ -445,11 +442,11 @@ class MainFrame extends JFrame {
     }
 
     private void grantAccess() throws IOException {
-        login.setForeground(new Color(85, 255, 133));
-        password.setForeground(new Color(85, 255, 133));
+        loginField.setForeground(new Color(85, 255, 133));
+        passwordField.setForeground(new Color(85, 255, 133));
 
         toInputAndDecryptFile();
-        isTakenAccess = true;
+        isAccessGranted = true;
 
         if (null != encryptButton && null != passwordButton) {
             this.add(encryptButton).setBounds(width - 42, height - 72, 22, 22);
@@ -538,21 +535,22 @@ class MainFrame extends JFrame {
         }
     }
 
-    private void toChangePassword() throws IOException, URISyntaxException {
-        if (null != getClass().getResource("/res/config.txt")) {
+    private void changePassword() {
+        URL resourceUrl = getClass().getResource("/res/config.txt");
+        if (null != resourceUrl) {
             try {
-                URL resourceUrl = getClass().getResource("/res/config.txt");
                 File file = new File(resourceUrl.toURI());
                 FileOutputStream fos = new FileOutputStream(file);
 
                 String toWrite = Utils.toSubstitute(datastore.getCorrectPassword());
                 fos.write(toWrite.getBytes());
                 fos.close();
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
+            } catch (IOException | URISyntaxException e) {
+                passLabel.setText("password configuration file is invalid");
+                repaint();
             }
         } else {
-            passLabel.setText("password configuration is invalid");
+            passLabel.setText("password configuration file is invalid");
             repaint();
         }
     }
