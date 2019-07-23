@@ -13,12 +13,11 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.aleksandrovich.Main;
 import com.aleksandrovich.User;
 
 public class Datastore {
+    private User activeUser;
     private String correctPassword;
-    private String correctLogin;
     private List<User> usersData = new LinkedList<>();
 
     public Datastore() {
@@ -26,7 +25,7 @@ public class Datastore {
 
     public FileStatus toReadPassword() {
         InputStream inRes = getClass().getResourceAsStream("/res/config.txt");
-        if (inRes != null){ // NO FILE
+        if (inRes != null) { // NO FILE
             try {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(inRes));
                 this.correctPassword = Utils.toSubstitute(reader.readLine());
@@ -61,11 +60,12 @@ public class Datastore {
                     line = Utils.toSubstitute(line);
 
                     String[] creds = line.split(":");
-                    this.usersData.add(new User( creds[1], creds[0]));
+                    this.usersData.add(new User(creds[1], creds[0]));
                     //d4c2a1ec869e1774a2f4b81163e1a968 friend
                 }
                 inputStream.close();
             } catch (IOException e) {
+                //TODO Exception handling
                 e.printStackTrace();
             }
             return true;
@@ -74,33 +74,36 @@ public class Datastore {
         }
     }
 
-    public FileStatus checkLicenseStatus() throws IOException {
-        InputStream inRes = Main.class.getResourceAsStream("/res/License.txt");
+    public FileStatus checkLicenseStatus() {
+        InputStream inRes = getClass().getResourceAsStream("/res/License.txt");
 
         if (inRes != null) //FILE IS ABSENT
         {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inRes));
-            String firstLine = reader.readLine();
-            String secondLine = reader.readLine();
+            try {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(inRes));
+                String firstLine = reader.readLine();
+                String secondLine = reader.readLine();
+                if (firstLine == null) {
+                    return FileStatus.FILE_IS_EMPTY;
+                } else {
+                    if (firstLine.contains(":") && secondLine.contains(":")) {
+                        String[] storedUsername = firstLine.split(":");
+                        String[] storedLicense = secondLine.split(":");
 
-            if (firstLine == null) {
-                return FileStatus.FILE_IS_EMPTY;
-            } else {
-                if (firstLine.contains(":") && secondLine.contains(":")){
-                    String[] storedUsername = firstLine.split(":");
-                    String[] storedLicense = secondLine.split(":");
-
-                    if (storedUsername.length >1 && storedLicense.length >1) {
-                        for (User user : this.usersData) {
-                            if (user.getName().equals(storedUsername[1]) && user.getLicense().equals(storedLicense[1])) { // user is valid
-                                this.correctLogin = user.getName();
-                                return FileStatus.SUCCESS;
+                        if (storedUsername.length > 1 && storedLicense.length > 1) {
+                            for (User user : this.usersData) {
+                                if (user.getName().equals(storedUsername[1]) && user.getLicense().equals(storedLicense[1])) { // user is valid
+                                    this.activeUser = user;
+                                    return FileStatus.SUCCESS;
+                                }
                             }
+                            return FileStatus.FILE_CONTAINS_WRONG_INFO;
                         }
-                        return FileStatus.FILE_CONTAINS_WRONG_INFO;
                     }
+                    return FileStatus.FILE_IS_CORRUPTED;
                 }
-                return FileStatus.FILE_IS_CORRUPTED;
+            } catch (IOException e) {
+                return FileStatus.FILE_IS_ABSENT;
             }
         } else {
             return FileStatus.FILE_IS_ABSENT;
@@ -147,11 +150,7 @@ public class Datastore {
         this.correctPassword = correctPassword;
     }
 
-    public String getCorrectLogin() {
-        return correctLogin;
-    }
-
-    public void setCorrectLogin(String correctLogin) {
-        this.correctLogin = correctLogin;
+    public User getActiveUser() {
+        return activeUser;
     }
 }

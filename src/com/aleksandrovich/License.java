@@ -1,9 +1,11 @@
 package com.aleksandrovich;
 
 import java.awt.*;
-import java.net.URL;
 
 import javax.swing.*;
+
+import static com.aleksandrovich.io.Constants.MAIN_BG_COLOR;
+import static com.aleksandrovich.io.Constants.MAIN_TEXT_FIELD_COLOR;
 
 class License extends JFrame {
     private JTextArea licenseText = new JTextArea();
@@ -13,17 +15,16 @@ class License extends JFrame {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLayout(null);
 
-        URL resource = getClass().getResource("res/license-bg.jpg");
-        if (null != resource) {
-            this.setContentPane(new JLabel(new ImageIcon(resource)));
-        }
+        this.getContentPane().setBackground(MAIN_BG_COLOR);
+        this.setForeground(Color.GRAY);
 
         this.setBounds(45 * Toolkit.getDefaultToolkit().getScreenSize().width / 100, 40 * Toolkit.getDefaultToolkit().getScreenSize().height / 100, 340, 150);
-        this.setForeground(new Color(201, 149, 255));
+        licenseText.setBackground(MAIN_TEXT_FIELD_COLOR);
+
         licenseText.setForeground(new Color(173, 183, 202));
         licenseText.setFont(new Font("Microsoft JhengHei Light", Font.BOLD, 10));
 
-        labelLicense.setForeground(new Color(196, 202, 198));
+        labelLicense.setForeground(Color.LIGHT_GRAY);
         labelLicense.setFont(new Font("Microsoft JhengHei Light", Font.BOLD, 10));
 
         this.add(labelLicense).setBounds(130, 120, 220, 20);

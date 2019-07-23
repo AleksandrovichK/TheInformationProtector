@@ -1,13 +1,10 @@
 package com.aleksandrovich;
 
-import java.io.IOException;
-
 public class Main {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         // TODO
-        // Change app background
-        // Change some layout
+        // Move buttons higher and set close = encryption
         // Add maven building for correct .jar packaging
         new MainFrame();
     }

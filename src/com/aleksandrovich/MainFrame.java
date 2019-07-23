@@ -23,6 +23,10 @@ import javax.swing.event.DocumentListener;
 import com.aleksandrovich.io.Datastore;
 import com.aleksandrovich.io.Utils;
 
+import static com.aleksandrovich.io.Constants.ACTIVATION_COLOR;
+import static com.aleksandrovich.io.Constants.MAIN_BG_COLOR;
+import static com.aleksandrovich.io.Constants.MAIN_TEXT_FIELD_COLOR;
+
 /**
  * Release version: 2.0
  *
@@ -34,14 +38,10 @@ import com.aleksandrovich.io.Utils;
  * */
 class MainFrame extends JFrame {
     private int width = 500;
-    private int height = 300;
+    private int height = 270;
 
-    private JTextArea loginField = new JTextArea();
     private JPasswordField passwordField = new JPasswordField();
 
-    private String username;
-
-    private JLabel logLabel = new JLabel("login");
     private JLabel passLabel = new JLabel("password");
     private JLabel logo = new JLabel();
 
@@ -54,7 +54,7 @@ class MainFrame extends JFrame {
     private License licenseFrame = new License();
     private Datastore datastore = new Datastore();
 
-    MainFrame() throws IOException {
+    MainFrame() {
 
         settings();
 
@@ -81,7 +81,6 @@ class MainFrame extends JFrame {
                             try {
                                 switch (datastore.printLicenseToFile(foundUser.getName(), foundUser.getLicense())) {
                                     case FILE_IS_ABSENT: {
-                                        logLabel.setText("invalid license file");
                                         passLabel.setText("invalid license file");
                                         repaint();
                                         break;
@@ -91,13 +90,7 @@ class MainFrame extends JFrame {
                                         break;
                                     }
                                 }
-                                username = foundUser.getName();
-                                logo.setText("Licensed for " + username + " by Aleksandrovich K., 2017-2020");
-                                if (username.equals("friend")) {
-                                    datastore.setCorrectLogin("friend");
-                                } else {
-                                    datastore.setCorrectLogin(username.substring(0, username.indexOf(' ')));
-                                }
+                                logo.setText("Licensed for " + datastore.getActiveUser().getName() + " by Aleksandrovich K., 2017-2020");
                                 repaint();
                             } catch (FileNotFoundException e1) {
                                 passLabel.setText("password store is not found!");
@@ -137,7 +130,6 @@ class MainFrame extends JFrame {
                             try {
                                 switch (datastore.printLicenseToFile(foundUser.getName(), foundUser.getLicense())) {
                                     case FILE_IS_ABSENT: {
-                                        logLabel.setText("invalid license file");
                                         passLabel.setText("invalid license file");
                                         repaint();
                                         break;
@@ -147,13 +139,7 @@ class MainFrame extends JFrame {
                                         break;
                                     }
                                 }
-                                username = foundUser.getName();
-                                logo.setText("Licensed for " + username + " by Aleksandrovich K., 2017-2020");
-                                if (username.equals("friend")) {
-                                    datastore.setCorrectLogin("friend");
-                                } else {
-                                    datastore.setCorrectLogin(username.substring(0, username.indexOf(' ')));
-                                }
+                                logo.setText("Licensed for " + datastore.getActiveUser().getName() + " by Aleksandrovich K., 2017-2020");
                                 repaint();
                             } catch (FileNotFoundException e1) {
                                 passLabel.setText("password store is not found!");
@@ -193,7 +179,6 @@ class MainFrame extends JFrame {
                             try {
                                 switch (datastore.printLicenseToFile(foundUser.getName(), foundUser.getLicense())) {
                                     case FILE_IS_ABSENT: {
-                                        logLabel.setText("invalid license file");
                                         passLabel.setText("invalid license file");
                                         repaint();
                                         break;
@@ -203,13 +188,7 @@ class MainFrame extends JFrame {
                                         break;
                                     }
                                 }
-                                username = foundUser.getName();
-                                logo.setText("Licensed for " + username + " by Aleksandrovich K., 2017-2020");
-                                if (username.equals("friend")) {
-                                    datastore.setCorrectLogin("friend");
-                                } else {
-                                    datastore.setCorrectLogin(username.substring(0, username.indexOf(' ')));
-                                }
+                                logo.setText("Licensed for " + datastore.getActiveUser().getName() + " by Aleksandrovich K., 2017-2020");
                                 repaint();
                             } catch (FileNotFoundException e1) {
                                 passLabel.setText("password store is not found!");
@@ -234,8 +213,9 @@ class MainFrame extends JFrame {
                 break;
             }
             case SUCCESS: {
-                logo.setText("Licensed for " + datastore.getCorrectLogin() + " by Aleksandrovich K., 2017-2020");
+                logo.setText("Licensed for " + datastore.getActiveUser().getName() + " by Aleksandrovich K., 2017-2020");
                 licenseFrame.close();
+
                 this.setVisible(true);
                 this.repaint();
                 break;
@@ -245,6 +225,7 @@ class MainFrame extends JFrame {
 
     private void settings() {
         this.setVisible(false);
+        this.setUndecorated(true);
 
         switch (this.datastore.toReadPassword()) {
             case FILE_IS_ABSENT: {
@@ -265,33 +246,20 @@ class MainFrame extends JFrame {
         }
         this.repaint();
 
-        URL bgImageResource = getClass().getResource("res/bg.jpg");
-        if (null != bgImageResource) {
-            this.setContentPane(new JLabel(new ImageIcon(bgImageResource)));
-        }
+        this.getContentPane().setBackground(MAIN_BG_COLOR);
 
         this.setBounds(40 * Toolkit.getDefaultToolkit().getScreenSize().width / 100, 30 * Toolkit.getDefaultToolkit().getScreenSize().height / 100, width, height);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLayout(null);
 
-        loginField.setBorder(javax.swing.BorderFactory.createEmptyBorder());
-        loginField.setLineWrap(true);
-        loginField.setWrapStyleWord(true);
-        loginField.setOpaque(true);
-
-        loginField.setForeground(new Color(43, 33, 202));
-        loginField.setFont(new Font("Microsoft JhengHei Light", Font.BOLD, 12));
-
-        passwordField.setForeground(new Color(132, 125, 202));
+        passwordField.setForeground(Color.LIGHT_GRAY);
+        passwordField.setBackground(MAIN_TEXT_FIELD_COLOR);
         passwordField.setBorder(javax.swing.BorderFactory.createEmptyBorder());
 
-        logLabel.setForeground(new Color(196, 202, 198));
-        logLabel.setFont(new Font("Microsoft JhengHei Light", Font.BOLD, 12));
-
-        passLabel.setForeground(new Color(196, 202, 198));
+        passLabel.setForeground(Color.GRAY);
         passLabel.setFont(new Font("Microsoft JhengHei Light", Font.BOLD, 12));
 
-        URL encryptImage = getClass().getResource("res/encrypt.jpg");
+        URL encryptImage = getClass().getClassLoader().getResource("res/encrypt.jpg");
         if (null != encryptImage) {
             encryptButton = new JButton(new ImageIcon(encryptImage));
             encryptButton.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
@@ -344,7 +312,7 @@ class MainFrame extends JFrame {
             });
         }
 
-        URL resource = getClass().getResource("res/sets.jpg");
+        URL resource = getClass().getClassLoader().getResource("res/sets.jpg");
         if (null != resource) {
             passwordButton = new JButton(new ImageIcon(resource));
             passwordButton.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
@@ -409,7 +377,8 @@ class MainFrame extends JFrame {
         DocumentListener listener = new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                if (loginField.getText().equals(datastore.getCorrectLogin()) && datastore.isPasswordCorrect(passwordField.getPassword())) {
+                // TODO Exception handling
+                if (datastore.isPasswordCorrect(passwordField.getPassword())) {
                     try {
                         grantAccess();
                     } catch (IOException e1) {
@@ -430,11 +399,8 @@ class MainFrame extends JFrame {
         };
 
         passwordField.getDocument().addDocumentListener(listener);
-        loginField.getDocument().addDocumentListener(listener);
 
-        this.add(loginField).setBounds(40, 100, 400, 20);
         this.add(passwordField).setBounds(40, 160, 400, 20);
-        this.add(logLabel).setBounds(40, 120, 400, 20);
         this.add(passLabel).setBounds(40, 180, 400, 20);
         this.add(logo).setBounds(180, 250, 340, 20);
 
@@ -442,8 +408,7 @@ class MainFrame extends JFrame {
     }
 
     private void grantAccess() throws IOException {
-        loginField.setForeground(new Color(85, 255, 133));
-        passwordField.setForeground(new Color(85, 255, 133));
+        passwordField.setForeground(ACTIVATION_COLOR);
 
         toInputAndDecryptFile();
         isAccessGranted = true;
@@ -521,22 +486,21 @@ class MainFrame extends JFrame {
             cryptedText.append((char) ((int) buffer.charAt(i) + 13));
         }
 
-        if (null != getClass().getResource("/res/crypted.txt")) {
-            URL resourceUrl = getClass().getResource("/res/crypted.txt");
-            File file = new File(resourceUrl.toURI());
+        URL resource = getClass().getClassLoader().getResource("/res/crypted.txt");
+        if (null != resource) {
+            File file = new File(resource.toURI());
             PrintStream output = new PrintStream(file);
 
             output.print(cryptedText);
             output.close();
         } else {
-            logLabel.setText("crypted file is unable!");
             passLabel.setText("crypted file is unable!");
             repaint();
         }
     }
 
     private void changePassword() {
-        URL resourceUrl = getClass().getResource("/res/config.txt");
+        URL resourceUrl = getClass().getClassLoader().getResource("/res/config.txt");
         if (null != resourceUrl) {
             try {
                 File file = new File(resourceUrl.toURI());
