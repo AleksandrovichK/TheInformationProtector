@@ -24,6 +24,8 @@ import com.aleksandrovich.io.Datastore;
 import com.aleksandrovich.io.Utils;
 
 import static com.aleksandrovich.io.Constants.ACTIVATION_COLOR;
+import static com.aleksandrovich.io.Constants.FONT_10;
+import static com.aleksandrovich.io.Constants.FONT_12;
 import static com.aleksandrovich.io.Constants.MAIN_BG_COLOR;
 import static com.aleksandrovich.io.Constants.MAIN_TEXT_FIELD_COLOR;
 
@@ -59,6 +61,46 @@ class MainFrame extends JFrame {
         settings();
 
         //d4c2a1ec869e1774a2f4b81163e1a968 friend
+
+        DocumentListener invalidLicenseListener = new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                User foundUser = datastore.isLicensePresent(licenseFrame.getLicenseText().getText());
+                if (foundUser != null) {
+                    licenseFrame.close();
+
+                    try {
+                        switch (datastore.printLicenseToFile(foundUser.getName(), foundUser.getLicense())) {
+                            case FILE_IS_ABSENT: {
+                                passLabel.setText("invalid license file");
+                                repaint();
+                                break;
+                            }
+                            case SUCCESS: {
+                                setVisible(true);
+                                break;
+                            }
+                        }
+                        logo.setText("Licensed for " + foundUser.getName() + " by Aleksandrovich K., 2017-2020");
+                        repaint();
+                    } catch (FileNotFoundException e1) {
+                        passLabel.setText("password store is not found!");
+                        repaint();
+                    }
+                }
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                this.insertUpdate(e);
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+
+            }
+        };
+
         switch (datastore.checkLicenseStatus()) {
             case FILE_IS_ABSENT: {
                 licenseFrame.setAlwaysOnTop(true);
@@ -71,45 +113,7 @@ class MainFrame extends JFrame {
             }
             case FILE_IS_EMPTY: {
                 licenseFrame.setAlwaysOnTop(true);
-                licenseFrame.getLicenseText().getDocument().addDocumentListener(new DocumentListener() {
-                    @Override
-                    public void insertUpdate(DocumentEvent e) {
-                        User foundUser = datastore.isLicensePresent(licenseFrame.getLicenseText().getText());
-                        if (foundUser != null) {
-                            licenseFrame.close();
-
-                            try {
-                                switch (datastore.printLicenseToFile(foundUser.getName(), foundUser.getLicense())) {
-                                    case FILE_IS_ABSENT: {
-                                        passLabel.setText("invalid license file");
-                                        repaint();
-                                        break;
-                                    }
-                                    case SUCCESS: {
-                                        setVisible(true);
-                                        break;
-                                    }
-                                }
-                                logo.setText("Licensed for " + datastore.getActiveUser().getName() + " by Aleksandrovich K., 2017-2020");
-                                repaint();
-                            } catch (FileNotFoundException e1) {
-                                passLabel.setText("password store is not found!");
-                                repaint();
-                            }
-                        }
-
-                    }
-
-                    @Override
-                    public void removeUpdate(DocumentEvent e) {
-                        this.insertUpdate(e);
-                    }
-
-                    @Override
-                    public void changedUpdate(DocumentEvent e) {
-
-                    }
-                });
+                licenseFrame.getLicenseText().getDocument().addDocumentListener(invalidLicenseListener);
                 licenseFrame.setVisible(true);
                 licenseFrame.repaint();
                 break;
@@ -120,45 +124,7 @@ class MainFrame extends JFrame {
                 licenseFrame.getLabelLicense().setText("insert correct license");
                 licenseFrame.getLabelLicense().setForeground(Color.ORANGE);
                 licenseFrame.getLabelLicense().setBounds(90, 120, 220, 20);
-                licenseFrame.getLicenseText().getDocument().addDocumentListener(new DocumentListener() {
-                    @Override
-                    public void insertUpdate(DocumentEvent e) {
-                        User foundUser = datastore.isLicensePresent(licenseFrame.getLicenseText().getText());
-                        if (foundUser != null) {
-                            licenseFrame.close();
-
-                            try {
-                                switch (datastore.printLicenseToFile(foundUser.getName(), foundUser.getLicense())) {
-                                    case FILE_IS_ABSENT: {
-                                        passLabel.setText("invalid license file");
-                                        repaint();
-                                        break;
-                                    }
-                                    case SUCCESS: {
-                                        setVisible(true);
-                                        break;
-                                    }
-                                }
-                                logo.setText("Licensed for " + datastore.getActiveUser().getName() + " by Aleksandrovich K., 2017-2020");
-                                repaint();
-                            } catch (FileNotFoundException e1) {
-                                passLabel.setText("password store is not found!");
-                                repaint();
-                            }
-                        }
-
-                    }
-
-                    @Override
-                    public void removeUpdate(DocumentEvent e) {
-                        this.insertUpdate(e);
-                    }
-
-                    @Override
-                    public void changedUpdate(DocumentEvent e) {
-
-                    }
-                });
+                licenseFrame.getLicenseText().getDocument().addDocumentListener(invalidLicenseListener);
                 licenseFrame.setVisible(true);
                 licenseFrame.repaint();
                 break;
@@ -169,45 +135,7 @@ class MainFrame extends JFrame {
                 licenseFrame.getLabelLicense().setForeground(Color.ORANGE);
                 licenseFrame.getLabelLicense().setBounds(110, 120, 220, 20);
                 licenseFrame.getLicenseText().setText("There is something wrong with configuration file!");
-                licenseFrame.getLicenseText().getDocument().addDocumentListener(new DocumentListener() {
-                    @Override
-                    public void insertUpdate(DocumentEvent e) {
-                        User foundUser = datastore.isLicensePresent(licenseFrame.getLicenseText().getText());
-                        if (foundUser != null) {
-                            licenseFrame.close();
-
-                            try {
-                                switch (datastore.printLicenseToFile(foundUser.getName(), foundUser.getLicense())) {
-                                    case FILE_IS_ABSENT: {
-                                        passLabel.setText("invalid license file");
-                                        repaint();
-                                        break;
-                                    }
-                                    case SUCCESS: {
-                                        setVisible(true);
-                                        break;
-                                    }
-                                }
-                                logo.setText("Licensed for " + datastore.getActiveUser().getName() + " by Aleksandrovich K., 2017-2020");
-                                repaint();
-                            } catch (FileNotFoundException e1) {
-                                passLabel.setText("password store is not found!");
-                                repaint();
-                            }
-                        }
-
-                    }
-
-                    @Override
-                    public void removeUpdate(DocumentEvent e) {
-                        this.insertUpdate(e);
-                    }
-
-                    @Override
-                    public void changedUpdate(DocumentEvent e) {
-
-                    }
-                });
+                licenseFrame.getLicenseText().getDocument().addDocumentListener(invalidLicenseListener);
                 licenseFrame.setVisible(true);
                 licenseFrame.repaint();
                 break;
@@ -239,8 +167,6 @@ class MainFrame extends JFrame {
             }
         }
 
-        this.repaint();
-
         if (!this.datastore.toFillLicenses()) {
             this.licenseFrame.getLabelLicense().setText("licenses registration is unable");
         }
@@ -257,9 +183,9 @@ class MainFrame extends JFrame {
         passwordField.setBorder(javax.swing.BorderFactory.createEmptyBorder());
 
         passLabel.setForeground(Color.GRAY);
-        passLabel.setFont(new Font("Microsoft JhengHei Light", Font.BOLD, 12));
+        passLabel.setFont(FONT_12);
 
-        URL encryptImage = getClass().getClassLoader().getResource("res/encrypt.jpg");
+        URL encryptImage = getClass().getClassLoader().getResource("res/encrypt3.png");
         if (null != encryptImage) {
             encryptButton = new JButton(new ImageIcon(encryptImage));
             encryptButton.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
@@ -375,7 +301,7 @@ class MainFrame extends JFrame {
         }
 
         logo.setForeground(new Color(196, 202, 198));
-        logo.setFont(new Font("Microsoft JhengHei Light", Font.BOLD, 10));
+        logo.setFont(FONT_10);
 
         DocumentListener listener = new DocumentListener() {
             @Override
@@ -503,7 +429,7 @@ class MainFrame extends JFrame {
     }
 
     private void changePassword() {
-        URL resourceUrl = getClass().getClassLoader().getResource("/res/config.txt");
+        URL resourceUrl = getClass().getResource("/res/config.txt");
         if (null != resourceUrl) {
             try {
                 File file = new File(resourceUrl.toURI());
