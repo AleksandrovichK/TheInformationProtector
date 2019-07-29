@@ -3,15 +3,10 @@ package com.aleksandrovich;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Scanner;
 
@@ -40,8 +35,9 @@ import static com.aleksandrovich.io.Constants.MAIN_TEXT_FIELD_COLOR;
 
 /**
  * Main frame class.
+ *
  * @author AleksandrovichK
- * */
+ */
 class MainFrame extends JFrame {
     private JPasswordField passwordField = new JPasswordField();
 
@@ -69,15 +65,25 @@ class MainFrame extends JFrame {
 
                 if (foundUser != null) {
                     licenseFrame.close();
-                    switch (datastore.printLicenseToFile(foundUser.getName(), foundUser.getLicense())) {
-                        case FILE_IS_NOT_AVAILABLE: {
-                            passLabel.setText("invalid license file");
+                    switch (datastore.printLicenseToStore(foundUser.getName(), foundUser.getLicense())) {
+                        case REGISTRY_SEGMENT_IS_NOT_AVAILABLE: {
+                            passLabel.setText("registry segment for license writing is unavailable");
                             setVisible(true);
                             repaint();
                             break;
                         }
                         case SUCCESS: {
                             setVisible(true);
+
+                            switch (datastore.initStore()) {
+                                case REGISTRY_SEGMENT_IS_NOT_AVAILABLE: {
+                                    passLabel.setText("registry segment for password writing is unavailable");
+                                    break;
+                                }
+                                case SUCCESS: {
+                                }
+                            }
+                            repaint();
                             break;
                         }
                     }
@@ -116,40 +122,19 @@ class MainFrame extends JFrame {
 
         if (isLicensesAvailable) {
             switch (datastore.checkLicenseStatus()) {
-                case FILE_IS_NOT_AVAILABLE: {
-                    licenseFrame.setAlwaysOnTop(true);
-                    licenseFrame.getLicenseText().setText("Repair configuration or the program won't work!");
-                    licenseFrame.getLicenseText().setEditable(false);
-                    licenseFrame.getLabelLicense().setText("configuration is not existing!");
-                    licenseFrame.getLabelLicense().setBounds(90, 120, 220, 20);
-                    licenseFrame.getLabelLicense().setForeground(Color.ORANGE);
-                    licenseFrame.repaint();
-                    break;
-                }
-                case FILE_IS_EMPTY: {
+                case REGISTRY_SEGMENT_IS_EMPTY: {
                     licenseFrame.setAlwaysOnTop(true);
                     licenseFrame.getLicenseText().getDocument().addDocumentListener(invalidLicenseListener);
                     licenseFrame.setVisible(true);
                     licenseFrame.repaint();
                     break;
                 }
-                case FILE_CONTAINS_WRONG_INFO: {
+                case REGISTRY_CONTAINS_WRONG_INFO: {
                     licenseFrame.setAlwaysOnTop(true);
-                    licenseFrame.getLicenseText().setText("Your existing license is fake!");
+                    licenseFrame.getLicenseText().setText("There is something wrong with configuration segment!");
                     licenseFrame.getLabelLicense().setText("insert correct license");
                     licenseFrame.getLabelLicense().setForeground(Color.ORANGE);
                     licenseFrame.getLabelLicense().setBounds(90, 120, 220, 20);
-                    licenseFrame.getLicenseText().getDocument().addDocumentListener(invalidLicenseListener);
-                    licenseFrame.setVisible(true);
-                    licenseFrame.repaint();
-                    break;
-                }
-                case FILE_IS_CORRUPTED: {
-                    licenseFrame.setAlwaysOnTop(true);
-                    licenseFrame.getLabelLicense().setText("insert license again");
-                    licenseFrame.getLabelLicense().setForeground(Color.ORANGE);
-                    licenseFrame.getLabelLicense().setBounds(110, 120, 220, 20);
-                    licenseFrame.getLicenseText().setText("There is something wrong with configuration file!");
                     licenseFrame.getLicenseText().getDocument().addDocumentListener(invalidLicenseListener);
                     licenseFrame.setVisible(true);
                     licenseFrame.repaint();
@@ -173,12 +158,8 @@ class MainFrame extends JFrame {
         this.setUndecorated(true);
 
         switch (this.datastore.toReadPassword()) {
-            case FILE_IS_NOT_AVAILABLE: {
+            case REGISTRY_SEGMENT_IS_EMPTY: {
                 passLabel.setText("password configuration is not available!");
-                break;
-            }
-            case FILE_IS_EMPTY: {
-                passLabel.setText("password configuration is not exist!");
                 break;
             }
             case SUCCESS: {
@@ -225,17 +206,22 @@ class MainFrame extends JFrame {
                         exitButton.setBounds(exitButton.getX(), exitButton.getY() - 2, exitButton.getWidth(), exitButton.getHeight());
                         if (isAccessGranted) {
                             switch (writeAndEncryptFile()) {
-                                case FILE_CRYPTED_IS_NOT_AVAILABLE: {
+                                case CRYPTED_DATA_IS_NOT_AVAILABLE: {
                                     passLabel.setText("encrypting failed as crypted file not available!");
                                     break;
                                 }
-                                case FILE_DECRYPTED_IS_NOT_AVAILABLE: {
-                                    passLabel.setText("encrypting failed as decrypted file not available!");
+                                case FILE_IS_TOO_LONG: {
+                                    passLabel.setText("File is too long!");
                                     break;
                                 }
                                 case SUCCESS: {
                                     try {
-                                        Runtime.getRuntime().exec("cmd /c  del decrypted.txt");
+                                        if (System.getProperty("os.name").contains("Windows")) {
+                                            Runtime.getRuntime().exec("cmd /c  del decrypted.txt");
+                                        } else {
+                                            // TODO Make MacOS proper command
+                                            Runtime.getRuntime().exec(new String[] { "rm", "\\decrypted.txt" });
+                                        }
                                         System.exit(0);
                                     } catch (Exception exp) {
                                         passLabel.setText("removing of decrypted file failed!");
@@ -298,24 +284,29 @@ class MainFrame extends JFrame {
                         }
 
                         if (newPasswordTyped && isAccessGranted) {
-                            newPasswordTyped = false;
+                            if (!new String(passwordField.getPassword()).isEmpty()) {
+                                newPasswordTyped = false;
 
-                            passLabel.setText("password");
-                            datastore.setCorrectPassword(new String(passwordField.getPassword()));
-                            repaint();
+                                passLabel.setText("password");
+                                datastore.setCorrectPassword(new String(passwordField.getPassword()));
+                                repaint();
 
-                            switch (changePassword()) {
-                                case FILE_IS_NOT_AVAILABLE: {
-                                    passLabel.setText("password configuration file is unavailable");
-                                    repaint();
+                                switch (changePassword()) {
+                                    case REGISTRY_SEGMENT_IS_NOT_AVAILABLE: {
+                                        passLabel.setText("password configuration segment is unavailable");
+                                        repaint();
+                                    }
+                                    case SUCCESS: {
+
+                                    }
                                 }
-                                case SUCCESS: {
-
-                                }
+                            } else {
+                                passLabel.setText("password cannot be empty!");
+                                repaint();
                             }
                         }
                     }
-                    passwordButton.setBounds(passwordButton.getX(), passwordButton.getY() - 2, passwordButton.getWidth(), passwordButton.getHeight());
+                    passwordButton.setBounds(passwordButton.getX(), passwordButton.getY() - 1, passwordButton.getWidth(), passwordButton.getHeight());
                 }
 
                 @Override
@@ -368,7 +359,7 @@ class MainFrame extends JFrame {
         passwordField.setForeground(ACTIVATION_COLOR);
 
         switch (readAndDecryptFile()) {
-            case FILE_CRYPTED_IS_NOT_AVAILABLE: {
+            case CRYPTED_DATA_IS_NOT_AVAILABLE: {
                 this.isAccessGranted = false;
                 passLabel.setText("crypted file is not available!");
                 break;
@@ -391,42 +382,30 @@ class MainFrame extends JFrame {
     }
 
     private Status readAndDecryptFile() {
-        InputStream inputStream = getClass().getResourceAsStream("/crypted.txt");
+        String cryptedData = Datastore.store.get("data", "");
+        StringBuilder decryptedText = new StringBuilder();
+        for (int i = 0; i < cryptedData.length(); i++) {
+            decryptedText.append((char) ((int) cryptedData.charAt(i) - 13));
+        }
 
-        if (inputStream != null) //NO FILE WITH SECRETS
-        {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-            StringBuilder buffer = new StringBuilder();
+        try {
+            PrintStream outputStream = new PrintStream(new FileOutputStream("decrypted.txt"));
+            outputStream.print(decryptedText);
+            outputStream.close();
+        } catch (IOException e) {
+            return Status.FILE_DECRYPTED_IS_NOT_AVAILABLE;
+        }
 
-            try {
-                StringBuilder decryptedText = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    buffer.append(line);
-                    decryptedText = new StringBuilder();
-
-                    for (int i = 0; i < buffer.length(); i++) {
-                        decryptedText.append((char) ((int) buffer.charAt(i) - 13));
-                    }
-                }
-
-                PrintStream outputStream = new PrintStream(new FileOutputStream("decrypted.txt"));
-                outputStream.print(decryptedText);
-
-                inputStream.close();
-                outputStream.close();
-            } catch (IOException e) {
-                return Status.FILE_DECRYPTED_IS_NOT_AVAILABLE;
-            }
-
-            try {
+        try {
+            if (System.getProperty("os.name").contains("Windows")) {
                 Runtime.getRuntime().exec("cmd /c decrypted.txt");
-                return Status.SUCCESS;
-            } catch (Exception e1) {
-                return Status.ERROR_WHILE_EXECUTING;
+            } else {
+                // TODO Make MacOS proper command
+                Runtime.getRuntime().exec(new String[] { "open", "\\decrypted.txt" });
             }
-        } else {
-            return Status.FILE_CRYPTED_IS_NOT_AVAILABLE;
+            return Status.SUCCESS;
+        } catch (Exception e1) {
+            return Status.ERROR_WHILE_EXECUTING;
         }
     }
 
@@ -449,39 +428,20 @@ class MainFrame extends JFrame {
                 cryptedText.append((char) ((int) buffer.charAt(i) + 13));
             }
 
-            URL resource = getClass().getResource("/crypted.txt");
-
-            if (null != resource) {
-                File file = new File(resource.toURI());
-                PrintStream output = new PrintStream(file);
-
-                output.print(cryptedText);
-                output.close();
-            } else {
-                return Status.FILE_CRYPTED_IS_NOT_AVAILABLE;
-            }
+            Datastore.store.put("data", cryptedText.toString());
             return Status.SUCCESS;
-        } catch (URISyntaxException | IOException e) {
-            return Status.FILE_DECRYPTED_IS_NOT_AVAILABLE;
+        } catch (Exception e) {
+            return Status.FILE_IS_TOO_LONG;
         }
     }
 
     private Status changePassword() {
-        URL resourceUrl = getClass().getResource("/config.txt");
-        if (null != resourceUrl) {
-            try {
-                File file = new File(resourceUrl.toURI());
-                FileOutputStream fos = new FileOutputStream(file);
-
-                String toWrite = Utils.toSubstitute(datastore.getCorrectPassword());
-                fos.write(toWrite.getBytes());
-                fos.close();
-                return Status.SUCCESS;
-            } catch (IOException | URISyntaxException e) {
-                return Status.FILE_IS_NOT_AVAILABLE;
-            }
-        } else {
-            return Status.FILE_IS_NOT_AVAILABLE;
+        try {
+            String toWrite = Utils.toSubstitute(datastore.getCorrectPassword());
+            Datastore.store.put("password", toWrite);
+            return Status.SUCCESS;
+        } catch (Exception e) {
+            return Status.REGISTRY_SEGMENT_IS_NOT_AVAILABLE;
         }
     }
 }
