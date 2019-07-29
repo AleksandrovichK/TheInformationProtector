@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/MyFirstOrder.iml" filepath="$PROJECT_DIR$/MyFirstOrder.iml" />
+      <module fileurl="file://$PROJECT_DIR$/InformationProtector.iml" filepath="$PROJECT_DIR$/InformationProtector.iml" />
     </modules>
   </component>
 </project>

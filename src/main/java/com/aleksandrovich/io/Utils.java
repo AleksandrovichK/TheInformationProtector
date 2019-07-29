@@ -1,5 +1,9 @@
 package com.aleksandrovich.io;
 
+/**
+ * Here is supposed to be more functions...
+ * @author AleksandrovichK
+ * */
 public class Utils {
     public static String toSubstitute(String text) {
         StringBuilder substituted = new StringBuilder();
